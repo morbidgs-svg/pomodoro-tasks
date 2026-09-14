@@ -136,6 +136,38 @@
     display: block; font-size: 12px; font-weight: 700;
     color: var(--muted); margin-bottom: 6px;
   }
+  .label-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 6px;
+    font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 6px;
+  }
+  .say {
+    flex: none; border: 1px solid var(--border); background: var(--card);
+    border-radius: 9px; padding: 2px 7px; font-size: 13px; line-height: 1.5;
+  }
+  .say:active { background: var(--accent-soft); }
+
+  /* ── 중국어 문장 카드 ── */
+  .phrase {
+    background: var(--card); border-radius: 20px; padding: 24px 20px 16px;
+    width: 100%; max-width: 340px; text-align: center;
+  }
+  .phrase .zh {
+    font-size: 30px; font-weight: 800; line-height: 1.35;
+    letter-spacing: 0.01em; margin-bottom: 10px; word-break: keep-all;
+  }
+  .phrase .pinyin { font-size: 14px; color: var(--muted); margin-bottom: 14px; }
+  .phrase .ko {
+    font-size: 14px; font-weight: 600; color: var(--accent);
+    background: var(--accent-soft); border-radius: 10px;
+    padding: 8px 10px; margin-bottom: 8px;
+  }
+  .phrase .note { font-size: 12px; color: var(--muted); line-height: 1.5; margin-bottom: 14px; }
+  .phrase .btns { display: flex; gap: 8px; }
+  .phrase .btns button {
+    flex: 1; border-radius: 12px; padding: 12px; font-size: 15px; font-weight: 600;
+    border: 1px solid var(--border); background: var(--bg); color: var(--text);
+  }
+  .phrase .btns button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
   .input, textarea.input {
     width: 100%; border: 1px solid var(--border); border-radius: 12px;
     background: #fbfaf8; padding: 12px 13px; outline: none;
@@ -545,6 +577,91 @@
     });
   }
 
+  /* ────────── 중국어로 물어보기 ────────── */
+  var PHRASES = {
+    price: {
+      zh: "这个多少钱？",
+      pinyin: "zhè ge duō shao qián?",
+      ko: "이거 얼마예요?"
+    },
+    moq: {
+      zh: "最少订多少个？",
+      pinyin: "zuì shǎo dìng duō shao ge?",
+      ko: "최소 몇 개부터 주문할 수 있어요?"
+    }
+  };
+
+  var zhVoice = null;
+  function pickZhVoice() {
+    if (!window.speechSynthesis || !speechSynthesis.getVoices) return null;
+    var list = speechSynthesis.getVoices() || [];
+    var fallback = null;
+    for (var i = 0; i < list.length; i++) {
+      var lang = String(list[i].lang || "").toLowerCase().replace(/_/g, "-");
+      if (lang.indexOf("zh") === 0) {
+        if (lang.indexOf("cn") > -1 || lang.indexOf("hans") > -1) return list[i];
+        if (!fallback) fallback = list[i];
+      }
+    }
+    return fallback;
+  }
+  if (window.speechSynthesis) {
+    try {
+      zhVoice = pickZhVoice();
+      speechSynthesis.onvoiceschanged = function () { zhVoice = pickZhVoice(); };
+    } catch (e) {}
+  }
+
+  function speakZh(text) {
+    if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) return false;
+    try {
+      speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      u.lang = "zh-CN";
+      if (!zhVoice) zhVoice = pickZhVoice();
+      /* 목소리 지정이 실패해도(브라우저마다 다름) 읽기 자체는 계속되도록 */
+      if (zhVoice) { try { u.voice = zhVoice; } catch (e) {} }
+      u.rate = 0.85;
+      speechSynthesis.speak(u);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /* 소리가 안 들리는 시장에서도 쓰도록 문장을 크게 띄워 보여준다 */
+  function openPhrase(key) {
+    var ph = PHRASES[key];
+    if (!ph) return;
+    var spoken = speakZh(ph.zh);
+    /* 목소리 목록을 읽을 수 있는데 중국어가 없을 때만 안내한다 (목록이 비면 아직 로딩 중일 수 있음) */
+    var voices = (window.speechSynthesis && speechSynthesis.getVoices) ? (speechSynthesis.getVoices() || []) : [];
+    var noVoice = !spoken || (voices.length > 0 && !zhVoice);
+
+    var back = document.createElement("div");
+    back.className = "backdrop center";
+    back.innerHTML = '<div class="phrase">' +
+      '<div class="zh">' + esc(ph.zh) + '</div>' +
+      '<div class="pinyin">' + esc(ph.pinyin) + '</div>' +
+      '<div class="ko">' + esc(ph.ko) + '</div>' +
+      '<div class="note">' + (noVoice
+        ? "이 폰에 중국어 음성이 없어 소리가 안 날 수 있어요.<br>화면을 그대로 보여주세요."
+        : "소리가 작으면 화면을 그대로 보여주세요.") + '</div>' +
+      '<div class="btns">' +
+        '<button data-close="1">닫기</button>' +
+        '<button class="primary" data-again="1">🔊 다시 듣기</button>' +
+      '</div></div>';
+
+    back.addEventListener("click", function (e) {
+      if (e.target.closest("[data-again]")) { speakZh(ph.zh); return; }
+      if (e.target.closest("[data-close]") || e.target === back) {
+        if (window.speechSynthesis) { try { speechSynthesis.cancel(); } catch (err) {} }
+        back.remove();
+      }
+    });
+    document.body.appendChild(back);
+  }
+
   /* ────────── 렌더 ────────── */
   var page = document.getElementById("page");
 
@@ -604,10 +721,14 @@
             '<button class="del-btn" data-del-item="' + esc(it.id) + '">✕ 삭제</button></div>' +
           photoSlot("item", "item:" + it.id, it.photo, "물건 사진 촬영") +
           '<div class="row field">' +
-            '<div><label>가격</label><div class="with-suffix">' +
+            '<div><div class="label-row"><span>가격</span>' +
+              '<button class="say" data-say="price" aria-label="중국어로 가격 물어보기">🔊</button></div>' +
+              '<div class="with-suffix">' +
               '<input class="input" type="text" inputmode="decimal" data-field="price" placeholder="0" value="' + esc(it.price) + '">' +
               '<span class="suffix">' + esc(cur.suffix) + '</span></div></div>' +
-            '<div><label>최소수량</label><div class="with-suffix">' +
+            '<div><div class="label-row"><span>최소수량</span>' +
+              '<button class="say" data-say="moq" aria-label="중국어로 최소수량 물어보기">🔊</button></div>' +
+              '<div class="with-suffix">' +
               '<input class="input" type="text" inputmode="numeric" data-field="moq" placeholder="0" value="' + esc(it.moq) + '">' +
               '<span class="suffix">개</span></div></div>' +
           '</div>' +
@@ -735,6 +856,8 @@
 
   /* ────────── 페이지 클릭 동작 ────────── */
   page.addEventListener("click", function (e) {
+    var say = e.target.closest("[data-say]");
+    if (say) { openPhrase(say.dataset.say); return; }
     if (e.target.closest("[data-market-menu]")) {
       document.getElementById("menuBtn").click();
       return;
