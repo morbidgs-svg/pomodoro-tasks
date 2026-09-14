@@ -199,6 +199,7 @@
     font-size: 30px; font-weight: 800; line-height: 1.35;
     letter-spacing: 0.01em; margin-bottom: 10px; word-break: keep-all;
   }
+  .phrase .zh.en { font-size: 25px; word-break: normal; }
   .phrase .pinyin { font-size: 14px; color: var(--muted); margin-bottom: 14px; }
   .phrase .ko {
     font-size: 14px; font-weight: 600; color: var(--accent);
@@ -277,6 +278,14 @@
     max-height: 80vh; overflow-y: auto;
   }
   .sheet h3 { font-size: 14px; margin: 10px 4px 12px; color: var(--muted); }
+  .sheet .hint { font-size: 12px; color: var(--muted); line-height: 1.6; margin: 12px 4px 2px; }
+  .seg { display: flex; gap: 8px; margin: 4px 4px 14px; }
+  .seg button {
+    flex: 1; padding: 10px 6px; border-radius: 12px; font-size: 15px; font-weight: 700;
+    border: 1px solid var(--border); background: var(--card); color: var(--muted);
+  }
+  .seg button.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  .sheet-close { justify-content: center; color: var(--muted); font-weight: 700; }
   .sheet-item {
     display: flex; align-items: center; gap: 10px; width: 100%;
     border: none; background: none; text-align: left;
@@ -302,6 +311,8 @@
   }
   .row-del:active { background: var(--accent-soft); }
   .sheet-item .grow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* 영어 문장은 길어서 한 줄에 안 들어간다 */
+  .sheet-item.phrase-row .grow { overflow: visible; white-space: normal; }
 
   /* ── 업체 검색 ── */
   .search-back {
@@ -639,11 +650,13 @@
   var I18N = {
     ko: {
       title: "아이템 소싱 노트",
-      menuAria: "메뉴", phraseAria: "중국어로 물어보기", addVendor: "+ 업체",
+      menuAria: "메뉴", phraseAria: function (n) { return n + "로 물어보기"; }, addVendor: "+ 업체",
       marketTag: "시장", marketPlaceholder: "시장 이름 (예: 이우시장)",
       marketBtn: function (i, n) { return "시장 " + i + "/" + n + " ▾"; },
       cardBlock: "명함 · 업체 정보",
-      sayCardAria: "중국어로 명함 요청하기", sayPriceAria: "중국어로 가격 물어보기", sayMoqAria: "중국어로 최소수량 물어보기",
+      sayCardAria: function (n) { return n + "로 명함 요청하기"; },
+      sayPriceAria: function (n) { return n + "로 가격 물어보기"; },
+      sayMoqAria: function (n) { return n + "로 최소수량 물어보기"; },
       vendorChip: function (n) { return "업체 " + n; },
       vendorName: "업체명 / 담당자",
       vendorNameHint: function (auto) { return auto + " (안 쓰면 자동)"; },
@@ -694,6 +707,10 @@
       itemCount: function (n) { return "물건 " + n; },
       delMarketAria: "시장 삭제", delVendorAria: "업체 페이지 삭제",
       langTitle: "언어 · Language",
+      myLangTitle: "내 언어 · 앱 화면",
+      talkTitle: "말 거는 언어 · 상대에게",
+      talkHint: "💬 로 물어보는 말과 가격 · 최소수량 옆 표시가 이 언어로 바뀝니다.",
+      talkSet: function (n) { return "이제 " + n + "로 물어봐요"; },
       searchAria: "업체 검색", menuSearch: "🔍 업체 검색",
       searchPlaceholder: "업체명 · 메모 · 시장 검색",
       searchHint: "업체명, 메모, 시장 이름, 가격으로 찾을 수 있어요.",
@@ -701,7 +718,7 @@
       searchCount: function (n) { return "결과 " + n + "곳"; },
 
       noteQuiet: "소리가 작으면 화면을 그대로 보여주세요.",
-      noteNoVoice: "이 폰에 중국어 음성이 없어 소리가 안 날 수 있어요.<br>화면을 그대로 보여주세요.",
+      noteNoVoice: function (n) { return "이 폰에 " + n + " 음성이 없어 소리가 안 날 수 있어요.<br>화면을 그대로 보여주세요."; },
       close: "닫기", again: "🔊 다시 듣기",
       groupPrice: "가격 · 주문", groupItem: "물건", groupContact: "배송 · 연락처",
 
@@ -725,11 +742,13 @@
 
     en: {
       title: "Sourcing Note",
-      menuAria: "Menu", phraseAria: "Ask in Chinese", addVendor: "+ Vendor",
+      menuAria: "Menu", phraseAria: function (n) { return "Ask in " + n; }, addVendor: "+ Vendor",
       marketTag: "MARKET", marketPlaceholder: "Market name (e.g. Yiwu Market)",
       marketBtn: function (i, n) { return "Market " + i + "/" + n + " ▾"; },
       cardBlock: "Business card · Vendor",
-      sayCardAria: "Ask for a business card in Chinese", sayPriceAria: "Ask the price in Chinese", sayMoqAria: "Ask the minimum order in Chinese",
+      sayCardAria: function (n) { return "Ask for a business card in " + n; },
+      sayPriceAria: function (n) { return "Ask the price in " + n; },
+      sayMoqAria: function (n) { return "Ask the minimum order in " + n; },
       vendorChip: function (n) { return "Vendor " + n; },
       vendorName: "Vendor / contact name",
       vendorNameHint: function (auto) { return auto + " (auto if left blank)"; },
@@ -780,6 +799,10 @@
       itemCount: function (n) { return n + " item" + (n === 1 ? "" : "s"); },
       delMarketAria: "Delete market", delVendorAria: "Delete vendor",
       langTitle: "Language · 언어",
+      myLangTitle: "My language · App screen",
+      talkTitle: "Language to speak · To the seller",
+      talkHint: "The 💬 phrases and the tags beside Price / Min. qty switch to this language.",
+      talkSet: function (n) { return "Now asking in " + n; },
       searchAria: "Search vendors", menuSearch: "🔍 Search vendors",
       searchPlaceholder: "Search vendor, notes, market",
       searchHint: "Search by vendor name, notes, market name or price.",
@@ -787,7 +810,7 @@
       searchCount: function (n) { return n + " result" + (n === 1 ? "" : "s"); },
 
       noteQuiet: "Too noisy? Just show the screen to the seller.",
-      noteNoVoice: "This phone has no Chinese voice installed, so it may stay silent.<br>Show the screen to the seller instead.",
+      noteNoVoice: function (n) { return "This phone has no " + n + " voice installed, so it may stay silent.<br>Show the screen to the seller instead."; },
       close: "Close", again: "🔊 Play again",
       groupPrice: "Price · Order", groupItem: "Product", groupContact: "Shipping · Contact",
 
@@ -811,11 +834,13 @@
 
     ja: {
       title: "仕入れノート",
-      menuAria: "メニュー", phraseAria: "中国語で聞く", addVendor: "+ 業者",
+      menuAria: "メニュー", phraseAria: function (n) { return n + "で聞く"; }, addVendor: "+ 業者",
       marketTag: "市場", marketPlaceholder: "市場名（例：義烏市場）",
       marketBtn: function (i, n) { return "市場 " + i + "/" + n + " ▾"; },
       cardBlock: "名刺・業者情報",
-      sayCardAria: "中国語で名刺をお願いする", sayPriceAria: "中国語で値段を聞く", sayMoqAria: "中国語で最小ロットを聞く",
+      sayCardAria: function (n) { return n + "で名刺をお願いする"; },
+      sayPriceAria: function (n) { return n + "で値段を聞く"; },
+      sayMoqAria: function (n) { return n + "で最小ロットを聞く"; },
       vendorChip: function (n) { return "業者 " + n; },
       vendorName: "業者名 / 担当者",
       vendorNameHint: function (auto) { return auto + "（未入力なら自動）"; },
@@ -866,6 +891,10 @@
       itemCount: function (n) { return "商品 " + n; },
       delMarketAria: "市場を削除", delVendorAria: "業者を削除",
       langTitle: "言語 · Language",
+      myLangTitle: "自分の言語・アプリ画面",
+      talkTitle: "話しかける言語・相手へ",
+      talkHint: "💬 で聞く言葉と、価格・最小ロットの横の表示がこの言語に変わります。",
+      talkSet: function (n) { return "これからは" + n + "で聞きます"; },
       searchAria: "業者を検索", menuSearch: "🔍 業者を検索",
       searchPlaceholder: "業者名・メモ・市場を検索",
       searchHint: "業者名、メモ、市場名、価格で探せます。",
@@ -873,7 +902,7 @@
       searchCount: function (n) { return "結果 " + n + " 件"; },
 
       noteQuiet: "音が聞こえないときは、この画面をそのまま見せてください。",
-      noteNoVoice: "この端末に中国語の音声がないため、音が出ないことがあります。<br>画面をそのまま見せてください。",
+      noteNoVoice: function (n) { return "この端末に" + n + "の音声がないため、音が出ないことがあります。<br>画面をそのまま見せてください。"; },
       close: "閉じる", again: "🔊 もう一度",
       groupPrice: "価格・注文", groupItem: "商品", groupContact: "配送・連絡先",
 
@@ -897,11 +926,13 @@
 
     vi: {
       title: "Sổ tìm hàng",
-      menuAria: "Menu", phraseAria: "Hỏi bằng tiếng Trung", addVendor: "+ NCC",
+      menuAria: "Menu", phraseAria: function (n) { return "Hỏi bằng " + n; }, addVendor: "+ NCC",
       marketTag: "CHỢ", marketPlaceholder: "Tên chợ (VD: Chợ Nghĩa Ô)",
       marketBtn: function (i, n) { return "Chợ " + i + "/" + n + " ▾"; },
       cardBlock: "Danh thiếp · Nhà cung cấp",
-      sayCardAria: "Xin danh thiếp bằng tiếng Trung", sayPriceAria: "Hỏi giá bằng tiếng Trung", sayMoqAria: "Hỏi số lượng tối thiểu bằng tiếng Trung",
+      sayCardAria: function (n) { return "Xin danh thiếp bằng " + n; },
+      sayPriceAria: function (n) { return "Hỏi giá bằng " + n; },
+      sayMoqAria: function (n) { return "Hỏi số lượng tối thiểu bằng " + n; },
       vendorChip: function (n) { return "NCC " + n; },
       vendorName: "Tên nhà cung cấp / người liên hệ",
       vendorNameHint: function (auto) { return auto + " (tự động nếu bỏ trống)"; },
@@ -952,6 +983,10 @@
       itemCount: function (n) { return n + " sản phẩm"; },
       delMarketAria: "Xóa chợ", delVendorAria: "Xóa nhà cung cấp",
       langTitle: "Ngôn ngữ · Language",
+      myLangTitle: "Ngôn ngữ của tôi · Màn hình",
+      talkTitle: "Ngôn ngữ để nói · Với người bán",
+      talkHint: "Câu hỏi ở 💬 và nhãn bên cạnh Giá · SL tối thiểu sẽ đổi sang ngôn ngữ này.",
+      talkSet: function (n) { return "Bây giờ hỏi bằng " + n; },
       searchAria: "Tìm nhà cung cấp", menuSearch: "🔍 Tìm nhà cung cấp",
       searchPlaceholder: "Tìm NCC, ghi chú, chợ",
       searchHint: "Tìm theo tên NCC, ghi chú, tên chợ hoặc giá.",
@@ -959,7 +994,7 @@
       searchCount: function (n) { return n + " kết quả"; },
 
       noteQuiet: "Ồn quá? Hãy đưa màn hình cho người bán xem.",
-      noteNoVoice: "Máy này chưa có giọng tiếng Trung nên có thể không phát ra tiếng.<br>Hãy đưa màn hình cho người bán xem.",
+      noteNoVoice: function (n) { return "Máy này chưa có giọng " + n + " nên có thể không phát ra tiếng.<br>Hãy đưa màn hình cho người bán xem."; },
       close: "Đóng", again: "🔊 Nghe lại",
       groupPrice: "Giá · Đặt hàng", groupItem: "Sản phẩm", groupContact: "Vận chuyển · Liên hệ",
 
@@ -983,11 +1018,13 @@
 
     zh: {
       title: "采购笔记",
-      menuAria: "菜单", phraseAria: "用中文询问", addVendor: "+ 商家",
+      menuAria: "菜单", phraseAria: function (n) { return "用" + n + "询问"; }, addVendor: "+ 商家",
       marketTag: "市场", marketPlaceholder: "市场名称（例：义乌市场）",
       marketBtn: function (i, n) { return "市场 " + i + "/" + n + " ▾"; },
       cardBlock: "名片 · 商家信息",
-      sayCardAria: "用中文索取名片", sayPriceAria: "用中文询问价格", sayMoqAria: "用中文询问起订量",
+      sayCardAria: function (n) { return "用" + n + "索取名片"; },
+      sayPriceAria: function (n) { return "用" + n + "询问价格"; },
+      sayMoqAria: function (n) { return "用" + n + "询问起订量"; },
       vendorChip: function (n) { return "商家 " + n; },
       vendorName: "商家名称 / 联系人",
       vendorNameHint: function (auto) { return auto + "（不填则自动）"; },
@@ -1038,6 +1075,10 @@
       itemCount: function (n) { return n + " 个货品"; },
       delMarketAria: "删除市场", delVendorAria: "删除商家",
       langTitle: "语言 · Language",
+      myLangTitle: "我的语言 · 界面",
+      talkTitle: "对话语言 · 对商家",
+      talkHint: "💬 里的句子，以及价格 · 起订量旁边的标签都会换成这个语言。",
+      talkSet: function (n) { return "现在用" + n + "询问"; },
       searchAria: "搜索商家", menuSearch: "🔍 搜索商家",
       searchPlaceholder: "搜索商家 · 备注 · 市场",
       searchHint: "可以按商家名称、备注、市场名称或价格搜索。",
@@ -1045,7 +1086,7 @@
       searchCount: function (n) { return "找到 " + n + " 个商家"; },
 
       noteQuiet: "太吵听不清时，直接把屏幕给对方看。",
-      noteNoVoice: "这台手机没有中文语音，可能不会发声。<br>请直接把屏幕给对方看。",
+      noteNoVoice: function (n) { return "这台手机没有" + n + "语音，可能不会发声。<br>请直接把屏幕给对方看。"; },
       close: "关闭", again: "🔊 再听一遍",
       groupPrice: "价格 · 下单", groupItem: "货品", groupContact: "发货 · 联系方式",
 
@@ -1069,6 +1110,17 @@
   };
 
   var lang = "ko";
+  var talk = "zh";              /* 상대에게 말을 걸 때 쓰는 언어 (중국어 · 영어) */
+  var TALKS = [{ code: "zh", name: "中文" }, { code: "en", name: "English" }];
+  var TALK_NAME = {
+    zh: { ko: "중국어", en: "Chinese", ja: "中国語", vi: "tiếng Trung", zh: "中文" },
+    en: { ko: "영어", en: "English", ja: "英語", vi: "tiếng Anh", zh: "英语" }
+  };
+  function talkName(code) {
+    var m = TALK_NAME[code || talk] || TALK_NAME.zh;
+    return m[lang] || m.en;
+  }
+  function defaultTalk() { return lang === "zh" ? "en" : "zh"; }
   function t(key, a, b) {
     var dict = I18N[lang] || I18N.ko;
     var v = dict[key];
@@ -1089,7 +1141,7 @@
     document.title = t("title");
     document.querySelector(".topbar .title").textContent = t("title");
     document.getElementById("menuBtn").setAttribute("aria-label", t("menuAria"));
-    document.getElementById("phraseBtn").setAttribute("aria-label", t("phraseAria"));
+    document.getElementById("phraseBtn").setAttribute("aria-label", t("phraseAria", talkName()));
     document.getElementById("searchBtn").setAttribute("aria-label", t("searchAria"));
     document.getElementById("addVendorBtn").textContent = t("addVendor");
     var prev = document.querySelector('[data-nav="prev"]');
@@ -1110,8 +1162,12 @@
     VND: { label: { ko: "동 (VND)", en: "Vietnamese dong (VND)", ja: "ドン (VND)", vi: "Đồng (VND)", zh: "越南盾 (VND)" },
            suffix: { ko: "₫", en: "₫", ja: "₫", vi: "₫", zh: "₫" } }
   };
-  /* 중국어 화면에서는 라벨과 같은 말이 두 번 나오지 않도록 빼준다 */
-  function zhTag(word) { return lang === "zh" ? "" : ' <b class="zh">' + word + "</b>"; }
+  /* 상대에게 보여줄 말. 내 화면 언어와 같으면 같은 말이 두 번 나오므로 뺀다 */
+  function sayTag(zhWord, enWord) {
+    var word = talk === "en" ? enWord : zhWord;
+    if (!word || talk === lang) return "";
+    return ' <b class="zh">' + word + "</b>";
+  }
 
   function curOf(v) { return CURRENCIES[v && v.currency] || CURRENCIES.KRW; }
   function curLabel(k) { var c = CURRENCIES[k] || CURRENCIES.KRW; return c.label[lang] || c.label.ko; }
@@ -1272,62 +1328,94 @@
     }
   }
 
-  /* ────────── 중국어로 물어보기 ────────── */
-  var PHRASES = {
-    price:        { zh: "这个多少钱？",        pinyin: "zhè ge duō shao qián?",              ko: "이거 얼마예요?", en: "How much is this?", ja: "これはいくらですか？", vi: "Cái này bao nhiêu tiền?" },
-    moq:          { zh: "最少订多少个？",      pinyin: "zuì shǎo dìng duō shao ge?",         ko: "최소 몇 개부터 주문할 수 있어요?", en: "What is the minimum order quantity?", ja: "最小ロットは何個からですか？", vi: "Số lượng đặt tối thiểu là bao nhiêu?" },
-    cheaper:      { zh: "能便宜点吗？",        pinyin: "néng pián yi diǎn ma?",              ko: "좀 깎아줄 수 있어요?", en: "Can you give me a better price?", ja: "少し安くできますか？", vi: "Bớt chút được không?" },
-    tooExpensive: { zh: "太贵了，再便宜一点。", pinyin: "tài guì le, zài pián yi yī diǎn.",   ko: "너무 비싸요, 조금만 더 싸게요.", en: "That's too expensive — a little cheaper, please.", ja: "高すぎます、もう少し安くしてください。", vi: "Đắt quá, bớt thêm chút nữa nhé." },
-    bulkPrice:    { zh: "多订能便宜吗？",      pinyin: "duō dìng néng pián yi ma?",          ko: "많이 주문하면 더 싸지나요?", en: "Is it cheaper if I order more?", ja: "たくさん頼めば安くなりますか？", vi: "Đặt nhiều có rẻ hơn không?" },
-    sample:       { zh: "有样品吗？",          pinyin: "yǒu yàng pǐn ma?",                   ko: "샘플 있어요?", en: "Do you have a sample?", ja: "サンプルはありますか？", vi: "Có hàng mẫu không?" },
-    otherColor:   { zh: "有没有别的颜色？",    pinyin: "yǒu méi yǒu bié de yán sè?",         ko: "다른 색 있어요?", en: "Do you have other colors?", ja: "他の色はありますか？", vi: "Có màu khác không?" },
-    photoOk:      { zh: "可以拍照吗？",        pinyin: "kě yǐ pāi zhào ma?",                 ko: "사진 찍어도 돼요?", en: "May I take photos?", ja: "写真を撮ってもいいですか？", vi: "Tôi chụp ảnh được không?" },
-    mixOrder:     { zh: "可以混批吗？",        pinyin: "kě yǐ hùn pī ma?",                   ko: "여러 종류 섞어서 주문돼요?", en: "Can I mix different styles in one order?", ja: "何種類か混ぜて注文できますか？", vi: "Đặt nhiều mẫu trộn lẫn được không?" },
-    takeNow:      { zh: "可以马上拿货吗？",    pinyin: "kě yǐ mǎ shàng ná huò ma?",          ko: "바로 받아갈 수 있어요?", en: "Can I take the goods right now?", ja: "今すぐ持ち帰れますか？", vi: "Lấy hàng ngay được không?" },
-    inStock:      { zh: "有现货吗？",          pinyin: "yǒu xiàn huò ma?",                   ko: "지금 바로 되는 재고 있어요?", en: "Do you have it in stock now?", ja: "今、在庫はありますか？", vi: "Bây giờ có sẵn hàng không?" },
-    shipTime:     { zh: "多久能发货？",        pinyin: "duō jiǔ néng fā huò?",               ko: "발송까지 얼마나 걸려요?", en: "How long until you can ship?", ja: "発送までどれくらいかかりますか？", vi: "Bao lâu thì giao hàng?" },
-    shipKorea:    { zh: "可以发货到韩国吗？",  pinyin: "kě yǐ fā huò dào hán guó ma?",       ko: "한국으로 보낼 수 있어요?", en: "Can you ship to Korea?", ja: "韓国まで送れますか？", vi: "Có gửi sang Hàn Quốc được không?" },
-    wechat:       { zh: "加个微信可以吗？",    pinyin: "jiā ge wēi xìn kě yǐ ma?",           ko: "위챗 추가해도 될까요?", en: "May I add you on WeChat?", ja: "WeChatを追加してもいいですか？", vi: "Kết bạn WeChat được không?" },
-    card:         { zh: "可以给我一张名片吗？", pinyin: "kě yǐ gěi wǒ yī zhāng míng piàn ma?", ko: "명함 한 장 주시겠어요?", en: "Could I have a business card?", ja: "名刺を一枚いただけますか？", vi: "Cho tôi xin một tấm danh thiếp được không?" }
+  /* ────────── 상대 언어로 물어보기 ────────── */
+  /* {c} 자리에는 내 화면 언어에 맞는 나라 이름이 들어간다 */
+  var HOME = {
+    ko: { zh: "韩国", py: "hán guó", en: "Korea", rk: "코리아", rj: "コリア", mean: "한국" },
+    ja: { zh: "日本", py: "rì běn", en: "Japan", rk: "재팬", rj: "ジャパン", mean: "日本" },
+    zh: { zh: "中国", py: "zhōng guó", en: "China", rk: "차이나", rj: "チャイナ", mean: "中国" },
+    vi: { zh: "越南", py: "yuè nán", en: "Vietnam", rk: "베트남", rj: "ベトナム", mean: "Việt Nam" },
+    en: { zh: "我的国家", py: "wǒ de guó jiā", en: "my country", rk: "마이 컨트리", rj: "マイ カントリー", mean: "my country" }
   };
+
+  /* zh/en = 상대에게 보여줄 문장, pinyin/read = 내가 읽을 발음, ko/ja/vi = 뜻 */
+  var PHRASES = {
+    price:        { zh: "这个多少钱？",        pinyin: "zhè ge duō shao qián?",              en: "How much is this?", read: { ko: "하우 머치 이즈 디스?", ja: "ハウ マッチ イズ ディス？" }, ko: "이거 얼마예요?", ja: "これはいくらですか？", vi: "Cái này bao nhiêu tiền?" },
+    moq:          { zh: "最少订多少个？",      pinyin: "zuì shǎo dìng duō shao ge?",         en: "What is the minimum order quantity?", read: { ko: "왓 이즈 더 미니멈 오더 퀀티티?", ja: "ワット イズ ザ ミニマム オーダー クオンティティ？" }, ko: "최소 몇 개부터 주문할 수 있어요?", ja: "最小ロットは何個からですか？", vi: "Số lượng đặt tối thiểu là bao nhiêu?" },
+    cheaper:      { zh: "能便宜点吗？",        pinyin: "néng pián yi diǎn ma?",              en: "Can you give me a better price?", read: { ko: "캔 유 기브 미 어 베터 프라이스?", ja: "キャン ユー ギブ ミー ア ベター プライス？" }, ko: "좀 깎아줄 수 있어요?", ja: "少し安くできますか？", vi: "Bớt chút được không?" },
+    tooExpensive: { zh: "太贵了，再便宜一点。", pinyin: "tài guì le, zài pián yi yī diǎn.",   en: "That's too expensive — a little cheaper, please.", read: { ko: "댓츠 투 익스펜시브. 어 리틀 치퍼, 플리즈.", ja: "ザッツ トゥー エクスペンシブ。ア リトル チーパー プリーズ。" }, ko: "너무 비싸요, 조금만 더 싸게요.", ja: "高すぎます、もう少し安くしてください。", vi: "Đắt quá, bớt thêm chút nữa nhé." },
+    bulkPrice:    { zh: "多订能便宜吗？",      pinyin: "duō dìng néng pián yi ma?",          en: "Is it cheaper if I order more?", read: { ko: "이즈 잇 치퍼 이프 아이 오더 모어?", ja: "イズ イット チーパー イフ アイ オーダー モア？" }, ko: "많이 주문하면 더 싸지나요?", ja: "たくさん頼めば安くなりますか？", vi: "Đặt nhiều có rẻ hơn không?" },
+    sample:       { zh: "有样品吗？",          pinyin: "yǒu yàng pǐn ma?",                   en: "Do you have a sample?", read: { ko: "두 유 해브 어 샘플?", ja: "ドゥ ユー ハブ ア サンプル？" }, ko: "샘플 있어요?", ja: "サンプルはありますか？", vi: "Có hàng mẫu không?" },
+    otherColor:   { zh: "有没有别的颜色？",    pinyin: "yǒu méi yǒu bié de yán sè?",         en: "Do you have other colors?", read: { ko: "두 유 해브 아더 컬러스?", ja: "ドゥ ユー ハブ アザー カラーズ？" }, ko: "다른 색 있어요?", ja: "他の色はありますか？", vi: "Có màu khác không?" },
+    photoOk:      { zh: "可以拍照吗？",        pinyin: "kě yǐ pāi zhào ma?",                 en: "May I take photos?", read: { ko: "메이 아이 테이크 포토스?", ja: "メイ アイ テイク フォトス？" }, ko: "사진 찍어도 돼요?", ja: "写真を撮ってもいいですか？", vi: "Tôi chụp ảnh được không?" },
+    mixOrder:     { zh: "可以混批吗？",        pinyin: "kě yǐ hùn pī ma?",                   en: "Can I mix different styles in one order?", read: { ko: "캔 아이 믹스 디퍼런트 스타일스 인 원 오더?", ja: "キャン アイ ミックス ディファレント スタイルズ イン ワン オーダー？" }, ko: "여러 종류 섞어서 주문돼요?", ja: "何種類か混ぜて注文できますか？", vi: "Đặt nhiều mẫu trộn lẫn được không?" },
+    takeNow:      { zh: "可以马上拿货吗？",    pinyin: "kě yǐ mǎ shàng ná huò ma?",          en: "Can I take the goods right now?", read: { ko: "캔 아이 테이크 더 굿즈 라이트 나우?", ja: "キャン アイ テイク ザ グッズ ライト ナウ？" }, ko: "바로 받아갈 수 있어요?", ja: "今すぐ持ち帰れますか？", vi: "Lấy hàng ngay được không?" },
+    inStock:      { zh: "有现货吗？",          pinyin: "yǒu xiàn huò ma?",                   en: "Do you have it in stock now?", read: { ko: "두 유 해브 잇 인 스톡 나우?", ja: "ドゥ ユー ハブ イット イン ストック ナウ？" }, ko: "지금 바로 되는 재고 있어요?", ja: "今、在庫はありますか？", vi: "Bây giờ có sẵn hàng không?" },
+    shipTime:     { zh: "多久能发货？",        pinyin: "duō jiǔ néng fā huò?",               en: "How long until you can ship?", read: { ko: "하우 롱 언틸 유 캔 십?", ja: "ハウ ロング アンティル ユー キャン シップ？" }, ko: "발송까지 얼마나 걸려요?", ja: "発送までどれくらいかかりますか？", vi: "Bao lâu thì giao hàng?" },
+    shipHome:     { zh: "可以发货到{c}吗？",  pinyin: "kě yǐ fā huò dào {c} ma?",           en: "Can you ship to {c}?", read: { ko: "캔 유 십 투 {c}?", ja: "キャン ユー シップ トゥ {c}？" }, ko: "{c}에 보낼 수 있어요?", ja: "{c}まで送れますか？", vi: "Có gửi sang {c} được không?" },
+    wechat:       { zh: "加个微信可以吗？",    pinyin: "jiā ge wēi xìn kě yǐ ma?",           en: "May I add you on WeChat?", read: { ko: "메이 아이 애드 유 온 위챗?", ja: "メイ アイ アッド ユー オン ウィーチャット？" }, ko: "위챗 추가해도 될까요?", ja: "WeChatを追加してもいいですか？", vi: "Kết bạn WeChat được không?" },
+    card:         { zh: "可以给我一张名片吗？", pinyin: "kě yǐ gěi wǒ yī zhāng míng piàn ma?", en: "Could I have a business card?", read: { ko: "쿠드 아이 해브 어 비즈니스 카드?", ja: "クッド アイ ハブ ア ビジネス カード？" }, ko: "명함 한 장 주시겠어요?", ja: "名刺を一枚いただけますか？", vi: "Cho tôi xin một tấm danh thiếp được không?" }
+  };
+
+  function fillHome(text, key) {
+    if (!text || text.indexOf("{c}") < 0) return text || "";
+    var h = HOME[lang] || HOME.ko;
+    return text.replace(/\{c\}/g, h[key] || h.mean);
+  }
+  /* 상대에게 보여줄 문장 */
+  function phSay(ph) { return fillHome(ph[talk] || ph.zh, talk === "en" ? "en" : "zh"); }
+  /* 내가 따라 읽을 발음 (중국어는 병음, 영어는 한글 · 가타카나) */
+  function phRead(ph) {
+    if (talk !== "en") return fillHome(ph.pinyin, "py");
+    var r = ph.read && ph.read[lang];
+    return r ? fillHome(r, lang === "ja" ? "rj" : "rk") : "";
+  }
+  /* 내 언어로 된 뜻. 말하는 문장과 같아지면 빼준다 */
+  function phMean(ph) {
+    var m = fillHome(ph[lang] || ph.ko, lang === "zh" ? "zh" : (lang === "en" ? "en" : "mean"));
+    return m === phSay(ph) ? "" : m;
+  }
 
   var PHRASE_GROUPS = [
     { title: "groupPrice", keys: ["price", "moq", "cheaper", "tooExpensive", "bulkPrice"] },
     { title: "groupItem", keys: ["sample", "otherColor", "photoOk", "mixOrder", "takeNow", "inStock"] },
-    { title: "groupContact", keys: ["shipTime", "shipKorea", "card", "wechat"] }
+    { title: "groupContact", keys: ["shipTime", "shipHome", "card", "wechat"] }
   ];
 
-  var zhVoice = null;
-  function pickZhVoice() {
+  var sayVoices = { zh: null, en: null };
+  function pickVoice(code) {
     if (!window.speechSynthesis || !speechSynthesis.getVoices) return null;
     var list = speechSynthesis.getVoices() || [];
     var fallback = null;
     for (var i = 0; i < list.length; i++) {
-      var lang = String(list[i].lang || "").toLowerCase().replace(/_/g, "-");
-      if (lang.indexOf("zh") === 0) {
-        if (lang.indexOf("cn") > -1 || lang.indexOf("hans") > -1) return list[i];
-        if (!fallback) fallback = list[i];
-      }
+      var vl = String(list[i].lang || "").toLowerCase().replace(/_/g, "-");
+      if (vl.indexOf(code) !== 0) continue;
+      if (code === "zh" ? (vl.indexOf("cn") > -1 || vl.indexOf("hans") > -1) : (vl.indexOf("us") > -1)) return list[i];
+      if (!fallback) fallback = list[i];
     }
     return fallback;
   }
+  function refreshVoices() {
+    sayVoices.zh = pickVoice("zh");
+    sayVoices.en = pickVoice("en");
+  }
   if (window.speechSynthesis) {
     try {
-      zhVoice = pickZhVoice();
-      speechSynthesis.onvoiceschanged = function () { zhVoice = pickZhVoice(); };
+      refreshVoices();
+      speechSynthesis.onvoiceschanged = refreshVoices;
     } catch (e) {}
   }
 
-  function speakZh(text) {
+  function speakSay(text) {
     if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) return false;
     try {
       speechSynthesis.cancel();
       var u = new SpeechSynthesisUtterance(text);
-      u.lang = "zh-CN";
-      if (!zhVoice) zhVoice = pickZhVoice();
+      u.lang = talk === "en" ? "en-US" : "zh-CN";
+      if (!sayVoices[talk]) sayVoices[talk] = pickVoice(talk);
       /* 목소리 지정이 실패해도(브라우저마다 다름) 읽기 자체는 계속되도록 */
-      if (zhVoice) { try { u.voice = zhVoice; } catch (e) {} }
-      u.rate = 0.85;
+      if (sayVoices[talk]) { try { u.voice = sayVoices[talk]; } catch (e) {} }
+      u.rate = talk === "en" ? 0.9 : 0.85;
       speechSynthesis.speak(u);
       return true;
     } catch (e) {
@@ -1339,29 +1427,28 @@
   function openPhrase(key) {
     var ph = PHRASES[key];
     if (!ph) return;
-    var spoken = speakZh(ph.zh);
-    /* 목소리 목록을 읽을 수 있는데 중국어가 없을 때만 안내한다 (목록이 비면 아직 로딩 중일 수 있음) */
+    var say = phSay(ph);
+    var spoken = speakSay(say);
+    /* 목소리 목록을 읽을 수 있는데 해당 언어가 없을 때만 안내한다 (목록이 비면 아직 로딩 중일 수 있음) */
     var voices = (window.speechSynthesis && speechSynthesis.getVoices) ? (speechSynthesis.getVoices() || []) : [];
-    var noVoice = !spoken || (voices.length > 0 && !zhVoice);
-
-    /* 중국어 화면에서는 뜻줄이 중국어 문장과 같아져 생략한다 */
-    var mean = ph[lang] || ph.ko;
-    if (mean === ph.zh) mean = "";
+    var noVoice = !spoken || (voices.length > 0 && !sayVoices[talk]);
+    var read = phRead(ph);
+    var mean = phMean(ph);
 
     var back = document.createElement("div");
     back.className = "backdrop center";
     back.innerHTML = '<div class="phrase">' +
-      '<div class="zh">' + esc(ph.zh) + '</div>' +
-      '<div class="pinyin">' + esc(ph.pinyin) + '</div>' +
+      '<div class="zh' + (talk === "en" ? " en" : "") + '">' + esc(say) + '</div>' +
+      (read ? '<div class="pinyin">' + esc(read) + '</div>' : "") +
       (mean ? '<div class="ko">' + esc(mean) + '</div>' : "") +
-      '<div class="note">' + (noVoice ? t("noteNoVoice") : t("noteQuiet")) + '</div>' +
+      '<div class="note">' + (noVoice ? t("noteNoVoice", talkName()) : t("noteQuiet")) + '</div>' +
       '<div class="btns">' +
         '<button data-close="1">' + esc(t("close")) + '</button>' +
         '<button class="primary" data-again="1">' + esc(t("again")) + '</button>' +
       '</div></div>';
 
     back.addEventListener("click", function (e) {
-      if (e.target.closest("[data-again]")) { speakZh(ph.zh); return; }
+      if (e.target.closest("[data-again]")) { speakSay(say); return; }
       if (e.target.closest("[data-close]") || e.target === back) {
         if (window.speechSynthesis) { try { speechSynthesis.cancel(); } catch (err) {} }
         back.remove();
@@ -1371,25 +1458,34 @@
   }
 
   function openPhraseList() {
-    var html = '<div class="sheet">';
-    PHRASE_GROUPS.forEach(function (g) {
-      html += '<h3>' + esc(t(g.title)) + '</h3>';
-      g.keys.forEach(function (k) {
-        var ph = PHRASES[k];
-        if (!ph) return;
-        var sub = ph[lang] || ph.ko;
-        if (sub === ph.zh) sub = ph.pinyin;
-        html += '<button class="sheet-item phrase-row" data-phrase="' + esc(k) + '">' +
-          '<span class="grow"><b>' + esc(ph.zh) + '</b><br><span class="sub">' + esc(sub) + '</span></span>' +
-          '<span class="sub">🔊</span></button>';
-      });
-    });
-    html += '</div>';
-
     var back = document.createElement("div");
     back.className = "backdrop";
-    back.innerHTML = html;
+
+    /* 말 거는 언어를 목록 맨 위에서 바로 바꿀 수 있게 해둔다 */
+    function draw() {
+      var html = '<div class="sheet">' +
+        '<div class="seg">' + TALKS.map(function (l) {
+          return '<button data-talk="' + l.code + '"' + (l.code === talk ? ' class="on"' : "") + '>' + esc(l.name) + '</button>';
+        }).join("") + '</div>';
+      PHRASE_GROUPS.forEach(function (g) {
+        html += '<h3>' + esc(t(g.title)) + '</h3>';
+        g.keys.forEach(function (k) {
+          var ph = PHRASES[k];
+          if (!ph) return;
+          var sub = phMean(ph) || phRead(ph);
+          html += '<button class="sheet-item phrase-row" data-phrase="' + esc(k) + '">' +
+            '<span class="grow"><b>' + esc(phSay(ph)) + '</b>' +
+            (sub ? '<br><span class="sub">' + esc(sub) + '</span>' : "") + '</span>' +
+            '<span class="sub">🔊</span></button>';
+        });
+      });
+      back.innerHTML = html + '</div>';
+    }
+    draw();
+
     back.addEventListener("click", function (e) {
+      var seg = e.target.closest("[data-talk]");
+      if (seg) { setTalk(seg.dataset.talk); draw(); return; }
       var row = e.target.closest("[data-phrase]");
       if (row) { openPhrase(row.dataset.phrase); return; }   /* 목록은 열어둔 채 카드만 띄운다 */
       if (e.target === back) back.remove();
@@ -1464,7 +1560,7 @@
       html += '<section class="block vendor-head">' +
         '<div class="block-label">' +
           '<span class="label-say">' + esc(t("cardBlock")) +
-            '<button class="say" data-say="card" aria-label="' + esc(t("sayCardAria")) + '">🔊</button></span>' +
+            '<button class="say" data-say="card" aria-label="' + esc(t("sayCardAria", talkName())) + '">🔊</button></span>' +
           '<span class="num">' + esc(t("vendorChip", state.current + 1)) + '</span></div>' +
         photoStrip("card", "card", v.cards, t("cardShoot")) +
         cardQrRow(v) +
@@ -1486,13 +1582,13 @@
             '<button class="del-btn" data-del-item="' + esc(it.id) + '">' + esc(t("delBtn")) + '</button></div>' +
           photoStrip("item", "item:" + it.id, it.photos, t("itemShoot")) +
           '<div class="row field">' +
-            '<div><div class="label-row"><span>' + esc(t("price")) + zhTag("价格") + '</span>' +
-              '<button class="say" data-say="price" aria-label="' + esc(t("sayPriceAria")) + '">🔊</button></div>' +
+            '<div><div class="label-row"><span>' + esc(t("price")) + sayTag("价格", "Price") + '</span>' +
+              '<button class="say" data-say="price" aria-label="' + esc(t("sayPriceAria", talkName())) + '">🔊</button></div>' +
               '<div class="with-suffix">' +
               '<input class="input" type="text" inputmode="decimal" data-field="price" placeholder="0" value="' + esc(it.price) + '">' +
               '<span class="suffix">' + esc(curSuffix(v.currency)) + '</span></div></div>' +
-            '<div><div class="label-row"><span>' + esc(t("moq")) + zhTag("起订量") + '</span>' +
-              '<button class="say" data-say="moq" aria-label="' + esc(t("sayMoqAria")) + '">🔊</button></div>' +
+            '<div><div class="label-row"><span>' + esc(t("moq")) + sayTag("起订量", "Min. order") + '</span>' +
+              '<button class="say" data-say="moq" aria-label="' + esc(t("sayMoqAria", talkName())) + '">🔊</button></div>' +
               '<div class="with-suffix">' +
               '<input class="input" type="text" inputmode="numeric" data-field="moq" placeholder="0" value="' + esc(it.moq) + '">' +
               '<span class="suffix">' + esc(t("moqUnit")) + '</span></div></div>' +
@@ -2036,15 +2132,32 @@
   function openLangSheet() {
     var back = document.createElement("div");
     back.className = "backdrop";
-    back.innerHTML = '<div class="sheet"><h3>' + esc(t("langTitle")) + '</h3>' +
-      LANGS.map(function (l) {
-        return '<button class="sheet-item' + (l.code === lang ? " active" : "") + '" data-lang="' + l.code + '">' +
-          '<span class="grow">' + esc(l.name) + '</span>' +
-          (l.code === lang ? '<span class="sub">✓</span>' : "") + '</button>';
-      }).join("") + '</div>';
+
+    function draw() {
+      back.innerHTML = '<div class="sheet"><h3>' + esc(t("myLangTitle")) + '</h3>' +
+        LANGS.map(function (l) {
+          return '<button class="sheet-item' + (l.code === lang ? " active" : "") + '" data-lang="' + l.code + '">' +
+            '<span class="grow">' + esc(l.name) + '</span>' +
+            (l.code === lang ? '<span class="sub">✓</span>' : "") + '</button>';
+        }).join("") +
+        '<h3>' + esc(t("talkTitle")) + '</h3>' +
+        TALKS.map(function (l) {
+          return '<button class="sheet-item' + (l.code === talk ? " active" : "") + '" data-talk="' + l.code + '">' +
+            '<span class="grow">' + esc(l.name) + '</span>' +
+            (l.code === talk ? '<span class="sub">✓</span>' : "") + '</button>';
+        }).join("") +
+        '<div class="hint">' + esc(t("talkHint")) + '</div>' +
+        '<button class="sheet-item sheet-close" data-shut="1">' + esc(t("close")) + '</button></div>';
+    }
+    draw();
+
+    /* 두 가지를 이어서 고를 수 있게 고른 뒤에도 시트를 열어둔다 */
     back.addEventListener("click", function (e) {
+      if (e.target.closest("[data-shut]")) { back.remove(); return; }
       var row = e.target.closest("[data-lang]");
-      if (row) { back.remove(); setLang(row.dataset.lang); return; }
+      if (row) { setLang(row.dataset.lang); draw(); return; }
+      var say = e.target.closest("[data-talk]");
+      if (say) { setTalk(say.dataset.talk); draw(); return; }
       if (e.target === back) back.remove();
     });
     document.body.appendChild(back);
@@ -2055,6 +2168,15 @@
     state.lang = code;
     save();
     applyLang();
+    render();
+  }
+  function setTalk(code) {
+    if (!TALK_NAME[code] || code === talk) return;
+    talk = code;
+    state.talk = code;
+    save();
+    applyLang();
+    toast(t("talkSet", talkName()));
     render();
   }
 
@@ -2136,6 +2258,8 @@
           return dbPut("images", id, dataURLtoBlob(images[id]));
         })).then(function () {
           state = normalize(restored);
+          state.lang = lang;            /* 화면 언어 설정은 지금 쓰던 것을 유지한다 */
+          state.talk = talk;
           save();
           return render();
         }).then(function () { toast(t("restored")); window.scrollTo(0, 0); })
@@ -2510,6 +2634,8 @@
     state = restored ? normalize(restored) : { markets: [newMarket()], currentMarket: 0, current: 0 };
     lang = (state.lang && I18N[state.lang]) ? state.lang : detectLang();
     state.lang = lang;
+    talk = TALK_NAME[state.talk] ? state.talk : defaultTalk();
+    state.talk = talk;
     applyLang();
     if (saved) save();        /* 옛 형식을 읽었으면 새 형식으로 다시 저장해둔다 */
     return render();
@@ -2520,6 +2646,7 @@
   })["catch"](function () {
     state = { markets: [newMarket()], currentMarket: 0, current: 0 };
     lang = detectLang();
+    talk = defaultTalk();
     applyLang();
     render();
     toast(t("storageWarn"));
