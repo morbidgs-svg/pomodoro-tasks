@@ -747,6 +747,168 @@
       moqText: function (v) { return "MOQ " + v + " pcs"; },
       memoText: function (v) { return "  Notes: " + v; },
       cardQrText: function (label, url) { return "Card " + label + ": " + url; }
+    },
+
+    ja: {
+      title: "仕入れノート",
+      menuAria: "メニュー", phraseAria: "中国語で聞く", addVendor: "+ 業者",
+      marketTag: "市場", marketPlaceholder: "市場名（例：義烏市場）",
+      marketBtn: function (i, n) { return "市場 " + i + "/" + n + " ▾"; },
+      cardBlock: "名刺・業者情報",
+      sayCardAria: "中国語で名刺をお願いする", sayPriceAria: "中国語で値段を聞く", sayMoqAria: "中国語で最小ロットを聞く",
+      vendorChip: function (n) { return "業者 " + n; },
+      vendorName: "業者名 / 担当者",
+      vendorNameHint: function (auto) { return auto + "（未入力なら自動）"; },
+      currency: "通貨",
+      itemChip: function (n) { return "商品 " + n; },
+      delBtn: "✕ 削除", price: "価格", moq: "最小ロット", memo: "メモ",
+      memoHint: "色、オプション、納期、サンプルなど", moqUnit: "個",
+      cardShoot: "名刺を撮影", itemShoot: "商品を撮影", addPhoto: "写真を追加",
+      photoDelAria: "この写真を削除",
+      noItems: "商品がまだありません。", addItem: "+ 商品を追加",
+      vendorAuto: function (n) { return "業者 " + n; },
+      marketAuto: function (n) { return "市場 " + n; },
+      pageInfo: function (i, n) { return i + " / " + n + " ページ"; },
+      prevAria: "前の業者", nextAria: "次の業者",
+
+      photoSheet: "写真を追加", photoCamera: "📷 カメラで撮影", photoAlbum: "🖼 アルバムから選ぶ", cancel: "キャンセル",
+
+      photoProcessing: "写真を処理中…", photoSaved: "写真を保存しました", photoFailed: "写真を追加できませんでした",
+      vendorAdded: "業者を追加しました", marketAdded: "市場を追加しました",
+      vendorDeleted: "業者を削除しました", marketDeleted: "市場を削除しました",
+      copied: "コピーしました", copyFailed: "コピーできませんでした", linkCopied: "リンクをコピーしました",
+      backupMaking: "バックアップを作成中…", backupSaved: "バックアップを保存しました", backupFailed: "バックアップに失敗しました",
+      restored: "バックアップを読み込みました", restoreFailed: "読み込みに失敗しました",
+      unreadableFile: "バックアップファイルを読めませんでした", badFile: "形式が違うファイルです",
+      storageWarn: "保存領域が使えないため、一時的に保存なしで動作します",
+      xlsxMaking: "Excelファイルを作成中…", xlsxSaved: "Excelファイルを保存しました", xlsxFailed: "Excelの保存に失敗しました",
+      nothingToExport: "書き出す内容がありません",
+      needCardFirst: "先に名刺の写真を追加してください", qrSearching: "名刺のQRコードを探しています…",
+      qrNotFound: "QRコードが見つかりません", qrSame: "すでに保存されているQRコードです",
+      qrFound: function (label) { return label + "を見つけました"; },
+
+      delPhotoAsk: "この写真を削除しますか？",
+      delItemAsk: "この商品を削除しますか？\n写真とメモも一緒に消えます。",
+      delVendorAsk: function (name) { return "「" + name + "」を削除しますか？\n名刺と商品情報がすべて消えます。"; },
+      delMarketAsk: function (name, n) { return "市場「" + name + "」をまるごと削除しますか？\nこの市場の業者 " + n + " 件がすべて消えます。"; },
+      restoreAsk: "バックアップを読み込むと、今の内容はすべて置き換わります。\n続けますか？",
+      delQrAsk: "保存されたQRリンクを削除しますか？",
+      confirmDel: "削除", confirmRestore: "読み込む",
+
+      marketsHead: function (n) { return "市場 (" + n + ")"; },
+      addMarket: "➕ 市場を追加",
+      vendorsHead: function (name, n) { return name + " の業者 (" + n + ")"; },
+      addVendorRow: "➕ 業者を追加", manage: "管理",
+      menuCopy: "📋 この業者をテキストでコピー", menuExcel: "📊 Excel(XLSX)をダウンロード — 写真つき",
+      menuBackup: "💾 全体バックアップを保存（写真つき）", menuRestore: "📂 バックアップを読み込む",
+      menuLang: "🌐 言語 · Language",
+      vendorCount: function (n) { return "業者 " + n; },
+      itemCount: function (n) { return "商品 " + n; },
+      delMarketAria: "市場を削除", delVendorAria: "業者を削除",
+      langTitle: "言語 · Language",
+
+      noteQuiet: "音が聞こえないときは、この画面をそのまま見せてください。",
+      noteNoVoice: "この端末に中国語の音声がないため、音が出ないことがあります。<br>画面をそのまま見せてください。",
+      close: "閉じる", again: "🔊 もう一度",
+      groupPrice: "価格・注文", groupItem: "商品", groupContact: "配送・連絡先",
+
+      qrWechat: "WeChat リンク", qrLink: "QR リンク", qrRaw: "QR の内容",
+      open: "開く", copy: "コピー", qrDelAria: "QRを削除",
+      qrScan: "🔍 名刺のQRを探す（WeChatなど）",
+
+      xlsxHeaders: ["市場", "業者番号", "業者名 / 担当者", "通貨", "名刺", "名刺QR / WeChatリンク", "商品番号", "商品写真", "価格", "最小ロット", "メモ"],
+      sheetName: "仕入れリスト",
+      xlsxFile: function (stamp) { return "仕入れリスト-" + stamp + ".xlsx"; },
+      backupFile: function (stamp) { return "仕入れノート-" + stamp + ".json"; },
+      xlsxFont: "游ゴシック",
+
+      noItemsText: "- 商品なし",
+      itemLineNo: function (n) { return "- 商品 " + n; },
+      priceText: function (v) { return "価格 " + v; },
+      moqText: function (v) { return "最小ロット " + v + "個"; },
+      memoText: function (v) { return "  メモ: " + v; },
+      cardQrText: function (label, url) { return "名刺 " + label + ": " + url; }
+    },
+
+    vi: {
+      title: "Sổ tìm hàng",
+      menuAria: "Menu", phraseAria: "Hỏi bằng tiếng Trung", addVendor: "+ NCC",
+      marketTag: "CHỢ", marketPlaceholder: "Tên chợ (VD: Chợ Nghĩa Ô)",
+      marketBtn: function (i, n) { return "Chợ " + i + "/" + n + " ▾"; },
+      cardBlock: "Danh thiếp · Nhà cung cấp",
+      sayCardAria: "Xin danh thiếp bằng tiếng Trung", sayPriceAria: "Hỏi giá bằng tiếng Trung", sayMoqAria: "Hỏi số lượng tối thiểu bằng tiếng Trung",
+      vendorChip: function (n) { return "NCC " + n; },
+      vendorName: "Tên nhà cung cấp / người liên hệ",
+      vendorNameHint: function (auto) { return auto + " (tự động nếu bỏ trống)"; },
+      currency: "Tiền tệ",
+      itemChip: function (n) { return "Sản phẩm " + n; },
+      delBtn: "✕ Xóa", price: "Giá", moq: "SL tối thiểu", memo: "Ghi chú",
+      memoHint: "Màu, tùy chọn, thời gian giao, hàng mẫu…", moqUnit: "cái",
+      cardShoot: "Chụp danh thiếp", itemShoot: "Chụp sản phẩm", addPhoto: "Thêm ảnh",
+      photoDelAria: "Xóa ảnh này",
+      noItems: "Chưa có sản phẩm nào.", addItem: "+ Thêm sản phẩm",
+      vendorAuto: function (n) { return "NCC " + n; },
+      marketAuto: function (n) { return "Chợ " + n; },
+      pageInfo: function (i, n) { return "Trang " + i + " / " + n; },
+      prevAria: "NCC trước", nextAria: "NCC sau",
+
+      photoSheet: "Thêm ảnh", photoCamera: "📷 Chụp ảnh", photoAlbum: "🖼 Chọn từ thư viện", cancel: "Hủy",
+
+      photoProcessing: "Đang xử lý ảnh…", photoSaved: "Đã lưu ảnh", photoFailed: "Không thêm được ảnh",
+      vendorAdded: "Đã thêm nhà cung cấp", marketAdded: "Đã thêm chợ",
+      vendorDeleted: "Đã xóa nhà cung cấp", marketDeleted: "Đã xóa chợ",
+      copied: "Đã sao chép", copyFailed: "Sao chép thất bại", linkCopied: "Đã sao chép liên kết",
+      backupMaking: "Đang tạo tệp sao lưu…", backupSaved: "Đã lưu tệp sao lưu", backupFailed: "Sao lưu thất bại",
+      restored: "Đã tải bản sao lưu", restoreFailed: "Không tải được bản sao lưu",
+      unreadableFile: "Không đọc được tệp sao lưu", badFile: "Tệp không đúng định dạng",
+      storageWarn: "Không dùng được bộ nhớ — đang chạy tạm thời, không lưu",
+      xlsxMaking: "Đang tạo tệp Excel…", xlsxSaved: "Đã lưu tệp Excel", xlsxFailed: "Xuất Excel thất bại",
+      nothingToExport: "Chưa có gì để xuất",
+      needCardFirst: "Hãy chụp danh thiếp trước", qrSearching: "Đang tìm mã QR…",
+      qrNotFound: "Không tìm thấy mã QR", qrSame: "Mã QR này đã được lưu",
+      qrFound: function (label) { return "Đã tìm thấy " + label; },
+
+      delPhotoAsk: "Xóa ảnh này?",
+      delItemAsk: "Xóa sản phẩm này?\nẢnh và ghi chú cũng sẽ bị xóa.",
+      delVendorAsk: function (name) { return 'Xóa nhà cung cấp "' + name + '"?\nDanh thiếp và toàn bộ sản phẩm sẽ bị xóa.'; },
+      delMarketAsk: function (name, n) { return 'Xóa toàn bộ chợ "' + name + '"?\nTất cả ' + n + ' nhà cung cấp trong chợ sẽ bị xóa.'; },
+      restoreAsk: "Tải bản sao lưu sẽ thay thế toàn bộ dữ liệu hiện tại.\nTiếp tục?",
+      delQrAsk: "Xóa liên kết QR đã lưu?",
+      confirmDel: "Xóa", confirmRestore: "Tải",
+
+      marketsHead: function (n) { return "Chợ (" + n + ")"; },
+      addMarket: "➕ Thêm chợ",
+      vendorsHead: function (name, n) { return "Nhà cung cấp ở " + name + " (" + n + ")"; },
+      addVendorRow: "➕ Thêm nhà cung cấp", manage: "Quản lý",
+      menuCopy: "📋 Sao chép NCC này dạng văn bản", menuExcel: "📊 Tải Excel (XLSX) — kèm ảnh",
+      menuBackup: "💾 Lưu sao lưu đầy đủ (kèm ảnh)", menuRestore: "📂 Tải bản sao lưu",
+      menuLang: "🌐 Ngôn ngữ · Language",
+      vendorCount: function (n) { return n + " NCC"; },
+      itemCount: function (n) { return n + " sản phẩm"; },
+      delMarketAria: "Xóa chợ", delVendorAria: "Xóa nhà cung cấp",
+      langTitle: "Ngôn ngữ · Language",
+
+      noteQuiet: "Ồn quá? Hãy đưa màn hình cho người bán xem.",
+      noteNoVoice: "Máy này chưa có giọng tiếng Trung nên có thể không phát ra tiếng.<br>Hãy đưa màn hình cho người bán xem.",
+      close: "Đóng", again: "🔊 Nghe lại",
+      groupPrice: "Giá · Đặt hàng", groupItem: "Sản phẩm", groupContact: "Vận chuyển · Liên hệ",
+
+      qrWechat: "Liên kết WeChat", qrLink: "Liên kết QR", qrRaw: "Nội dung QR",
+      open: "Mở", copy: "Sao chép", qrDelAria: "Xóa QR",
+      qrScan: "🔍 Tìm mã QR trên danh thiếp (WeChat…)",
+
+      xlsxHeaders: ["Chợ", "NCC số", "Nhà cung cấp / liên hệ", "Tiền tệ", "Danh thiếp", "QR danh thiếp / WeChat", "SP số", "Ảnh sản phẩm", "Giá", "SL tối thiểu", "Ghi chú"],
+      sheetName: "Tim hang",
+      xlsxFile: function (stamp) { return "tim-hang-" + stamp + ".xlsx"; },
+      backupFile: function (stamp) { return "so-tim-hang-" + stamp + ".json"; },
+      xlsxFont: "Calibri",
+
+      noItemsText: "- Chưa có sản phẩm",
+      itemLineNo: function (n) { return "- SP " + n; },
+      priceText: function (v) { return "Giá " + v; },
+      moqText: function (v) { return "SL tối thiểu " + v + " cái"; },
+      memoText: function (v) { return "  Ghi chú: " + v; },
+      cardQrText: function (label, url) { return "Danh thiếp " + label + ": " + url; }
     }
   };
 
@@ -760,7 +922,11 @@
   }
   function detectLang() {
     var nav = (navigator.language || navigator.userLanguage || "ko").toLowerCase();
-    return nav.indexOf("ko") === 0 ? "ko" : "en";
+    var codes = ["ko", "ja", "vi"];
+    for (var i = 0; i < codes.length; i++) {
+      if (nav.indexOf(codes[i]) === 0) return codes[i];
+    }
+    return "en";
   }
   function applyLang() {
     document.documentElement.lang = lang;
@@ -776,11 +942,16 @@
   }
 
   var CURRENCIES = {
-    KRW: { label: { ko: "원 (KRW)", en: "Korean won (KRW)" }, suffix: { ko: "원", en: "₩" } },
-    USD: { label: { ko: "달러 (USD)", en: "US dollar (USD)" }, suffix: { ko: "$", en: "$" } },
-    CNY: { label: { ko: "위안 (CNY)", en: "Chinese yuan (CNY)" }, suffix: { ko: "¥", en: "¥" } },
-    JPY: { label: { ko: "엔 (JPY)", en: "Japanese yen (JPY)" }, suffix: { ko: "円", en: "¥" } },
-    VND: { label: { ko: "동 (VND)", en: "Vietnamese dong (VND)" }, suffix: { ko: "₫", en: "₫" } }
+    KRW: { label: { ko: "원 (KRW)", en: "Korean won (KRW)", ja: "ウォン (KRW)", vi: "Won Hàn (KRW)" },
+           suffix: { ko: "원", en: "₩", ja: "₩", vi: "₩" } },
+    USD: { label: { ko: "달러 (USD)", en: "US dollar (USD)", ja: "ドル (USD)", vi: "Đô la Mỹ (USD)" },
+           suffix: { ko: "$", en: "$", ja: "$", vi: "$" } },
+    CNY: { label: { ko: "위안 (CNY)", en: "Chinese yuan (CNY)", ja: "元 (CNY)", vi: "Nhân dân tệ (CNY)" },
+           suffix: { ko: "¥", en: "¥", ja: "元", vi: "¥" } },
+    JPY: { label: { ko: "엔 (JPY)", en: "Japanese yen (JPY)", ja: "円 (JPY)", vi: "Yên Nhật (JPY)" },
+           suffix: { ko: "円", en: "¥", ja: "円", vi: "¥" } },
+    VND: { label: { ko: "동 (VND)", en: "Vietnamese dong (VND)", ja: "ドン (VND)", vi: "Đồng (VND)" },
+           suffix: { ko: "₫", en: "₫", ja: "₫", vi: "₫" } }
   };
   function curOf(v) { return CURRENCIES[v && v.currency] || CURRENCIES.KRW; }
   function curLabel(k) { var c = CURRENCIES[k] || CURRENCIES.KRW; return c.label[lang] || c.label.ko; }
@@ -943,21 +1114,21 @@
 
   /* ────────── 중국어로 물어보기 ────────── */
   var PHRASES = {
-    price:        { zh: "这个多少钱？",        pinyin: "zhè ge duō shao qián?",              ko: "이거 얼마예요?", en: "How much is this?" },
-    moq:          { zh: "最少订多少个？",      pinyin: "zuì shǎo dìng duō shao ge?",         ko: "최소 몇 개부터 주문할 수 있어요?", en: "What is the minimum order quantity?" },
-    cheaper:      { zh: "能便宜点吗？",        pinyin: "néng pián yi diǎn ma?",              ko: "좀 깎아줄 수 있어요?", en: "Can you give me a better price?" },
-    tooExpensive: { zh: "太贵了，再便宜一点。", pinyin: "tài guì le, zài pián yi yī diǎn.",   ko: "너무 비싸요, 조금만 더 싸게요.", en: "That's too expensive — a little cheaper, please." },
-    bulkPrice:    { zh: "多订能便宜吗？",      pinyin: "duō dìng néng pián yi ma?",          ko: "많이 주문하면 더 싸지나요?", en: "Is it cheaper if I order more?" },
-    sample:       { zh: "有样品吗？",          pinyin: "yǒu yàng pǐn ma?",                   ko: "샘플 있어요?", en: "Do you have a sample?" },
-    otherColor:   { zh: "有没有别的颜色？",    pinyin: "yǒu méi yǒu bié de yán sè?",         ko: "다른 색 있어요?", en: "Do you have other colors?" },
-    photoOk:      { zh: "可以拍照吗？",        pinyin: "kě yǐ pāi zhào ma?",                 ko: "사진 찍어도 돼요?", en: "May I take photos?" },
-    mixOrder:     { zh: "可以混批吗？",        pinyin: "kě yǐ hùn pī ma?",                   ko: "여러 종류 섞어서 주문돼요?", en: "Can I mix different styles in one order?" },
-    takeNow:      { zh: "可以马上拿货吗？",    pinyin: "kě yǐ mǎ shàng ná huò ma?",          ko: "바로 받아갈 수 있어요?", en: "Can I take the goods right now?" },
-    inStock:      { zh: "有现货吗？",          pinyin: "yǒu xiàn huò ma?",                   ko: "지금 바로 되는 재고 있어요?", en: "Do you have it in stock now?" },
-    shipTime:     { zh: "多久能发货？",        pinyin: "duō jiǔ néng fā huò?",               ko: "발송까지 얼마나 걸려요?", en: "How long until you can ship?" },
-    shipKorea:    { zh: "可以发货到韩国吗？",  pinyin: "kě yǐ fā huò dào hán guó ma?",       ko: "한국으로 보낼 수 있어요?", en: "Can you ship to Korea?" },
-    wechat:       { zh: "加个微信可以吗？",    pinyin: "jiā ge wēi xìn kě yǐ ma?",           ko: "위챗 추가해도 될까요?", en: "May I add you on WeChat?" },
-    card:         { zh: "可以给我一张名片吗？", pinyin: "kě yǐ gěi wǒ yī zhāng míng piàn ma?", ko: "명함 한 장 주시겠어요?", en: "Could I have a business card?" }
+    price:        { zh: "这个多少钱？",        pinyin: "zhè ge duō shao qián?",              ko: "이거 얼마예요?", en: "How much is this?", ja: "これはいくらですか？", vi: "Cái này bao nhiêu tiền?" },
+    moq:          { zh: "最少订多少个？",      pinyin: "zuì shǎo dìng duō shao ge?",         ko: "최소 몇 개부터 주문할 수 있어요?", en: "What is the minimum order quantity?", ja: "最小ロットは何個からですか？", vi: "Số lượng đặt tối thiểu là bao nhiêu?" },
+    cheaper:      { zh: "能便宜点吗？",        pinyin: "néng pián yi diǎn ma?",              ko: "좀 깎아줄 수 있어요?", en: "Can you give me a better price?", ja: "少し安くできますか？", vi: "Bớt chút được không?" },
+    tooExpensive: { zh: "太贵了，再便宜一点。", pinyin: "tài guì le, zài pián yi yī diǎn.",   ko: "너무 비싸요, 조금만 더 싸게요.", en: "That's too expensive — a little cheaper, please.", ja: "高すぎます、もう少し安くしてください。", vi: "Đắt quá, bớt thêm chút nữa nhé." },
+    bulkPrice:    { zh: "多订能便宜吗？",      pinyin: "duō dìng néng pián yi ma?",          ko: "많이 주문하면 더 싸지나요?", en: "Is it cheaper if I order more?", ja: "たくさん頼めば安くなりますか？", vi: "Đặt nhiều có rẻ hơn không?" },
+    sample:       { zh: "有样品吗？",          pinyin: "yǒu yàng pǐn ma?",                   ko: "샘플 있어요?", en: "Do you have a sample?", ja: "サンプルはありますか？", vi: "Có hàng mẫu không?" },
+    otherColor:   { zh: "有没有别的颜色？",    pinyin: "yǒu méi yǒu bié de yán sè?",         ko: "다른 색 있어요?", en: "Do you have other colors?", ja: "他の色はありますか？", vi: "Có màu khác không?" },
+    photoOk:      { zh: "可以拍照吗？",        pinyin: "kě yǐ pāi zhào ma?",                 ko: "사진 찍어도 돼요?", en: "May I take photos?", ja: "写真を撮ってもいいですか？", vi: "Tôi chụp ảnh được không?" },
+    mixOrder:     { zh: "可以混批吗？",        pinyin: "kě yǐ hùn pī ma?",                   ko: "여러 종류 섞어서 주문돼요?", en: "Can I mix different styles in one order?", ja: "何種類か混ぜて注文できますか？", vi: "Đặt nhiều mẫu trộn lẫn được không?" },
+    takeNow:      { zh: "可以马上拿货吗？",    pinyin: "kě yǐ mǎ shàng ná huò ma?",          ko: "바로 받아갈 수 있어요?", en: "Can I take the goods right now?", ja: "今すぐ持ち帰れますか？", vi: "Lấy hàng ngay được không?" },
+    inStock:      { zh: "有现货吗？",          pinyin: "yǒu xiàn huò ma?",                   ko: "지금 바로 되는 재고 있어요?", en: "Do you have it in stock now?", ja: "今、在庫はありますか？", vi: "Bây giờ có sẵn hàng không?" },
+    shipTime:     { zh: "多久能发货？",        pinyin: "duō jiǔ néng fā huò?",               ko: "발송까지 얼마나 걸려요?", en: "How long until you can ship?", ja: "発送までどれくらいかかりますか？", vi: "Bao lâu thì giao hàng?" },
+    shipKorea:    { zh: "可以发货到韩国吗？",  pinyin: "kě yǐ fā huò dào hán guó ma?",       ko: "한국으로 보낼 수 있어요?", en: "Can you ship to Korea?", ja: "韓国まで送れますか？", vi: "Có gửi sang Hàn Quốc được không?" },
+    wechat:       { zh: "加个微信可以吗？",    pinyin: "jiā ge wēi xìn kě yǐ ma?",           ko: "위챗 추가해도 될까요?", en: "May I add you on WeChat?", ja: "WeChatを追加してもいいですか？", vi: "Kết bạn WeChat được không?" },
+    card:         { zh: "可以给我一张名片吗？", pinyin: "kě yǐ gěi wǒ yī zhāng míng piàn ma?", ko: "명함 한 장 주시겠어요?", en: "Could I have a business card?", ja: "名刺を一枚いただけますか？", vi: "Cho tôi xin một tấm danh thiếp được không?" }
   };
 
   var PHRASE_GROUPS = [
@@ -1508,7 +1679,12 @@
     });
   }
 
-  var LANGS = [{ code: "ko", name: "한국어" }, { code: "en", name: "English" }];
+  var LANGS = [
+    { code: "ko", name: "한국어" },
+    { code: "en", name: "English" },
+    { code: "ja", name: "日本語" },
+    { code: "vi", name: "Tiếng Việt" }
+  ];
   function openLangSheet() {
     var back = document.createElement("div");
     back.className = "backdrop";
