@@ -447,11 +447,11 @@
   /* 이름을 안 치면 순서대로 "업체 1, 2, 3…" 으로 불린다 */
   function vendorLabel(v, i) {
     var name = v && v.name ? v.name.trim() : "";
-    return name || ("업체 " + (i + 1));
+    return name || t("vendorAuto", i + 1);
   }
   function marketLabel(m, i) {
     var name = m && m.name ? m.name.trim() : "";
-    return name || ("시장 " + (i + 1));
+    return name || t("marketAuto", i + 1);
   }
   /* 옛 버전(시장 없이 업체만 있던 저장본)을 시장 1개로 감싸 올린다 */
   function migrate(saved) {
@@ -584,13 +584,207 @@
   }
 
   /* ────────── 유틸 ────────── */
-  var CURRENCIES = {
-    KRW: { label: "원 (KRW)", suffix: "원" },
-    USD: { label: "달러 (USD)", suffix: "$" },
-    CNY: { label: "위안 (CNY)", suffix: "¥" },
-    JPY: { label: "엔 (JPY)", suffix: "円" },
-    VND: { label: "동 (VND)", suffix: "₫" }
+
+  /* ────────── 언어 (한국어 / English) ────────── */
+  var I18N = {
+    ko: {
+      title: "아이템 소싱 노트",
+      menuAria: "메뉴", phraseAria: "중국어로 물어보기", addVendor: "+ 업체",
+      marketTag: "시장", marketPlaceholder: "시장 이름 (예: 이우시장)",
+      marketBtn: function (i, n) { return "시장 " + i + "/" + n + " ▾"; },
+      cardBlock: "명함 · 업체 정보",
+      sayCardAria: "중국어로 명함 요청하기", sayPriceAria: "중국어로 가격 물어보기", sayMoqAria: "중국어로 최소수량 물어보기",
+      vendorChip: function (n) { return "업체 " + n; },
+      vendorName: "업체명 / 담당자",
+      vendorNameHint: function (auto) { return auto + " (안 쓰면 자동)"; },
+      currency: "통화",
+      itemChip: function (n) { return "물건 " + n; },
+      delBtn: "✕ 삭제", price: "가격", moq: "최소수량", memo: "메모",
+      memoHint: "색상, 옵션, 납기, 샘플 여부 등", moqUnit: "개",
+      cardShoot: "명함 사진 촬영", itemShoot: "물건 사진 촬영", addPhoto: "사진 추가",
+      photoDelAria: "이 사진 삭제",
+      noItems: "아직 등록된 물건이 없습니다.", addItem: "+ 물건 추가",
+      vendorAuto: function (n) { return "업체 " + n; },
+      marketAuto: function (n) { return "시장 " + n; },
+      pageInfo: function (i, n) { return i + " / " + n + " 페이지"; },
+      prevAria: "이전 업체", nextAria: "다음 업체",
+
+      photoSheet: "사진 넣기", photoCamera: "📷 카메라로 촬영", photoAlbum: "🖼 앨범에서 선택", cancel: "취소",
+
+      photoProcessing: "사진 처리 중…", photoSaved: "사진이 저장되었습니다", photoFailed: "사진을 넣지 못했습니다",
+      vendorAdded: "새 업체가 추가되었습니다", marketAdded: "새 시장이 추가되었습니다",
+      vendorDeleted: "업체 페이지를 삭제했습니다", marketDeleted: "시장을 삭제했습니다",
+      copied: "텍스트를 복사했습니다", copyFailed: "복사에 실패했습니다", linkCopied: "링크를 복사했습니다",
+      backupMaking: "백업 파일을 만드는 중…", backupSaved: "백업 파일을 저장했습니다", backupFailed: "백업에 실패했습니다",
+      restored: "백업을 불러왔습니다", restoreFailed: "불러오기에 실패했습니다",
+      unreadableFile: "백업 파일을 읽을 수 없습니다", badFile: "형식이 맞지 않는 파일입니다",
+      storageWarn: "저장 공간을 쓸 수 없어 임시로 동작합니다",
+      xlsxMaking: "엑셀 파일 만드는 중…", xlsxSaved: "엑셀 파일을 저장했습니다", xlsxFailed: "엑셀 저장에 실패했습니다",
+      nothingToExport: "내보낼 내용이 없습니다",
+      needCardFirst: "먼저 명함 사진을 넣어주세요", qrSearching: "명함에서 QR 찾는 중…",
+      qrNotFound: "QR을 찾지 못했습니다", qrSame: "이미 저장된 QR입니다",
+      qrFound: function (label) { return label + "를 찾았습니다"; },
+
+      delPhotoAsk: "이 사진을 삭제할까요?",
+      delItemAsk: "이 물건 정보를 삭제할까요?\n사진과 메모가 함께 지워집니다.",
+      delVendorAsk: function (name) { return '"' + name + '" 업체 페이지를 삭제할까요?\n명함과 물건 정보가 모두 지워집니다.'; },
+      delMarketAsk: function (name, n) { return '"' + name + '" 시장을 통째로 삭제할까요?\n이 시장의 업체 ' + n + '곳이 모두 지워집니다.'; },
+      restoreAsk: "백업을 불러오면 지금 입력한 내용이 모두 대체됩니다.\n계속할까요?",
+      delQrAsk: "저장된 QR 링크를 지울까요?",
+      confirmDel: "삭제", confirmRestore: "불러오기",
+
+      marketsHead: function (n) { return "시장 (" + n + ")"; },
+      addMarket: "➕ 새 시장 추가",
+      vendorsHead: function (name, n) { return name + "의 업체 페이지 (" + n + ")"; },
+      addVendorRow: "➕ 새 업체 추가", manage: "관리",
+      menuCopy: "📋 현재 업체 텍스트 복사", menuExcel: "📊 엑셀(XLSX) 다운로드 — 사진 포함",
+      menuBackup: "💾 전체 백업 저장 (사진 포함)", menuRestore: "📂 백업 불러오기",
+      menuLang: "🌐 언어 · Language",
+      vendorCount: function (n) { return "업체 " + n; },
+      itemCount: function (n) { return "물건 " + n; },
+      delMarketAria: "시장 삭제", delVendorAria: "업체 페이지 삭제",
+      langTitle: "언어 · Language",
+
+      noteQuiet: "소리가 작으면 화면을 그대로 보여주세요.",
+      noteNoVoice: "이 폰에 중국어 음성이 없어 소리가 안 날 수 있어요.<br>화면을 그대로 보여주세요.",
+      close: "닫기", again: "🔊 다시 듣기",
+      groupPrice: "가격 · 주문", groupItem: "물건", groupContact: "배송 · 연락처",
+
+      qrWechat: "위챗 링크", qrLink: "QR 링크", qrRaw: "QR 내용",
+      open: "열기", copy: "복사", qrDelAria: "QR 삭제",
+      qrScan: "🔍 명함에서 QR 찾기 (위챗 등)",
+
+      xlsxHeaders: ["시장", "업체 번호", "업체명 / 담당자", "통화", "명함", "명함 QR / 위챗 링크", "물건 번호", "물건 사진", "가격", "최소수량", "메모"],
+      sheetName: "소싱목록",
+      xlsxFile: function (stamp) { return "소싱목록-" + stamp + ".xlsx"; },
+      backupFile: function (stamp) { return "소싱노트-" + stamp + ".json"; },
+      xlsxFont: "맑은 고딕",
+
+      noItemsText: "- 등록된 물건 없음",
+      itemLineNo: function (n) { return "- 물건 " + n; },
+      priceText: function (v) { return "가격 " + v; },
+      moqText: function (v) { return "최소수량 " + v + "개"; },
+      memoText: function (v) { return "  메모: " + v; },
+      cardQrText: function (label, url) { return "명함 " + label + ": " + url; }
+    },
+
+    en: {
+      title: "Sourcing Note",
+      menuAria: "Menu", phraseAria: "Ask in Chinese", addVendor: "+ Vendor",
+      marketTag: "MARKET", marketPlaceholder: "Market name (e.g. Yiwu Market)",
+      marketBtn: function (i, n) { return "Market " + i + "/" + n + " ▾"; },
+      cardBlock: "Business card · Vendor",
+      sayCardAria: "Ask for a business card in Chinese", sayPriceAria: "Ask the price in Chinese", sayMoqAria: "Ask the minimum order in Chinese",
+      vendorChip: function (n) { return "Vendor " + n; },
+      vendorName: "Vendor / contact name",
+      vendorNameHint: function (auto) { return auto + " (auto if left blank)"; },
+      currency: "Currency",
+      itemChip: function (n) { return "Item " + n; },
+      delBtn: "✕ Delete", price: "Price", moq: "Min. order", memo: "Notes",
+      memoHint: "Colors, options, lead time, samples…", moqUnit: "pcs",
+      cardShoot: "Take card photo", itemShoot: "Take item photo", addPhoto: "Add photo",
+      photoDelAria: "Delete this photo",
+      noItems: "No items yet.", addItem: "+ Add item",
+      vendorAuto: function (n) { return "Vendor " + n; },
+      marketAuto: function (n) { return "Market " + n; },
+      pageInfo: function (i, n) { return "Page " + i + " / " + n; },
+      prevAria: "Previous vendor", nextAria: "Next vendor",
+
+      photoSheet: "Add a photo", photoCamera: "📷 Take a photo", photoAlbum: "🖼 Choose from gallery", cancel: "Cancel",
+
+      photoProcessing: "Processing photo…", photoSaved: "Photo saved", photoFailed: "Could not add the photo",
+      vendorAdded: "New vendor added", marketAdded: "New market added",
+      vendorDeleted: "Vendor deleted", marketDeleted: "Market deleted",
+      copied: "Copied to clipboard", copyFailed: "Copy failed", linkCopied: "Link copied",
+      backupMaking: "Building backup file…", backupSaved: "Backup file saved", backupFailed: "Backup failed",
+      restored: "Backup loaded", restoreFailed: "Could not load the backup",
+      unreadableFile: "Could not read the backup file", badFile: "That file is not a valid backup",
+      storageWarn: "Storage is unavailable — running temporarily without saving",
+      xlsxMaking: "Building Excel file…", xlsxSaved: "Excel file saved", xlsxFailed: "Excel export failed",
+      nothingToExport: "Nothing to export yet",
+      needCardFirst: "Add a business card photo first", qrSearching: "Looking for a QR code…",
+      qrNotFound: "No QR code found", qrSame: "That QR code is already saved",
+      qrFound: function (label) { return label + " found"; },
+
+      delPhotoAsk: "Delete this photo?",
+      delItemAsk: "Delete this item?\nIts photos and notes will be removed.",
+      delVendorAsk: function (name) { return 'Delete the vendor "' + name + '"?\nIts card and all items will be removed.'; },
+      delMarketAsk: function (name, n) { return 'Delete the whole market "' + name + '"?\nAll ' + n + ' vendor(s) in it will be removed.'; },
+      restoreAsk: "Loading a backup replaces everything you have now.\nContinue?",
+      delQrAsk: "Remove the saved QR link?",
+      confirmDel: "Delete", confirmRestore: "Load",
+
+      marketsHead: function (n) { return "Markets (" + n + ")"; },
+      addMarket: "➕ New market",
+      vendorsHead: function (name, n) { return "Vendors in " + name + " (" + n + ")"; },
+      addVendorRow: "➕ New vendor", manage: "Manage",
+      menuCopy: "📋 Copy this vendor as text", menuExcel: "📊 Download Excel (XLSX) — with photos",
+      menuBackup: "💾 Save full backup (with photos)", menuRestore: "📂 Load backup",
+      menuLang: "🌐 Language · 언어",
+      vendorCount: function (n) { return n + " vendor" + (n === 1 ? "" : "s"); },
+      itemCount: function (n) { return n + " item" + (n === 1 ? "" : "s"); },
+      delMarketAria: "Delete market", delVendorAria: "Delete vendor",
+      langTitle: "Language · 언어",
+
+      noteQuiet: "Too noisy? Just show the screen to the seller.",
+      noteNoVoice: "This phone has no Chinese voice installed, so it may stay silent.<br>Show the screen to the seller instead.",
+      close: "Close", again: "🔊 Play again",
+      groupPrice: "Price · Order", groupItem: "Product", groupContact: "Shipping · Contact",
+
+      qrWechat: "WeChat link", qrLink: "QR link", qrRaw: "QR content",
+      open: "Open", copy: "Copy", qrDelAria: "Delete QR",
+      qrScan: "🔍 Find a QR code on the card (WeChat…)",
+
+      xlsxHeaders: ["Market", "Vendor #", "Vendor / contact", "Currency", "Card", "Card QR / WeChat link", "Item #", "Item photo", "Price", "Min. order", "Notes"],
+      sheetName: "Sourcing",
+      xlsxFile: function (stamp) { return "sourcing-" + stamp + ".xlsx"; },
+      backupFile: function (stamp) { return "sourcing-note-" + stamp + ".json"; },
+      xlsxFont: "Calibri",
+
+      noItemsText: "- No items yet",
+      itemLineNo: function (n) { return "- Item " + n; },
+      priceText: function (v) { return "Price " + v; },
+      moqText: function (v) { return "MOQ " + v + " pcs"; },
+      memoText: function (v) { return "  Notes: " + v; },
+      cardQrText: function (label, url) { return "Card " + label + ": " + url; }
+    }
   };
+
+  var lang = "ko";
+  function t(key, a, b) {
+    var dict = I18N[lang] || I18N.ko;
+    var v = dict[key];
+    if (v === undefined) v = I18N.ko[key];
+    if (typeof v === "function") return v(a, b);
+    return v === undefined ? key : v;
+  }
+  function detectLang() {
+    var nav = (navigator.language || navigator.userLanguage || "ko").toLowerCase();
+    return nav.indexOf("ko") === 0 ? "ko" : "en";
+  }
+  function applyLang() {
+    document.documentElement.lang = lang;
+    document.title = t("title");
+    document.querySelector(".topbar .title").textContent = t("title");
+    document.getElementById("menuBtn").setAttribute("aria-label", t("menuAria"));
+    document.getElementById("phraseBtn").setAttribute("aria-label", t("phraseAria"));
+    document.getElementById("addVendorBtn").textContent = t("addVendor");
+    var prev = document.querySelector('[data-nav="prev"]');
+    var next = document.querySelector('[data-nav="next"]');
+    if (prev) prev.setAttribute("aria-label", t("prevAria"));
+    if (next) next.setAttribute("aria-label", t("nextAria"));
+  }
+
+  var CURRENCIES = {
+    KRW: { label: { ko: "원 (KRW)", en: "Korean won (KRW)" }, suffix: { ko: "원", en: "₩" } },
+    USD: { label: { ko: "달러 (USD)", en: "US dollar (USD)" }, suffix: { ko: "$", en: "$" } },
+    CNY: { label: { ko: "위안 (CNY)", en: "Chinese yuan (CNY)" }, suffix: { ko: "¥", en: "¥" } },
+    JPY: { label: { ko: "엔 (JPY)", en: "Japanese yen (JPY)" }, suffix: { ko: "円", en: "¥" } },
+    VND: { label: { ko: "동 (VND)", en: "Vietnamese dong (VND)" }, suffix: { ko: "₫", en: "₫" } }
+  };
+  function curOf(v) { return CURRENCIES[v && v.currency] || CURRENCIES.KRW; }
+  function curLabel(k) { var c = CURRENCIES[k] || CURRENCIES.KRW; return c.label[lang] || c.label.ko; }
+  function curSuffix(k) { var c = CURRENCIES[k] || CURRENCIES.KRW; return c.suffix[lang] || c.suffix.ko; }
 
   function formatNumber(raw) {
     var cleaned = String(raw).replace(/[^\d.]/g, "");
@@ -627,8 +821,8 @@
       back.className = "backdrop center";
       back.innerHTML =
         '<div class="dialog"><p>' + esc(message) + '</p><div class="btns">' +
-        '<button data-r="0">취소</button>' +
-        '<button class="danger" data-r="1">' + esc(okLabel || "삭제") + '</button>' +
+        '<button data-r="0">' + esc(t("cancel")) + '</button>' +
+        '<button class="danger" data-r="1">' + esc(okLabel || t("confirmDel")) + '</button>' +
         '</div></div>';
       back.addEventListener("click", function (e) {
         var btn = e.target.closest("button[data-r]");
@@ -686,7 +880,7 @@
     return /(?:u\.wechat\.com|weixin\.qq\.com|wxid|weixin:)/i.test(String(text || ""));
   }
   function qrLabel(text) {
-    return isWechatLink(text) ? "위챗 링크" : (/^https?:\/\//i.test(text) ? "QR 링크" : "QR 내용");
+    return isWechatLink(text) ? t("qrWechat") : (/^https?:\/\//i.test(text) ? t("qrLink") : t("qrRaw"));
   }
   function shortText(text, max) {
     text = String(text || "");
@@ -704,15 +898,15 @@
       if (v.cardQr === text) return;
       v.cardQr = text;
       save();
-      return render().then(function () { toast(qrLabel(text) + "를 찾았습니다"); });
+      return render().then(function () { toast(t("qrFound", qrLabel(text))); });
     })["catch"](function () {});
   }
 
   /* 명함 사진 전체를 훑어 QR 찾기 (버튼으로 직접 눌렀을 때) */
   function scanCardQR(showResult) {
     var v = vendor();
-    if (!v.cards.length) { if (showResult) toast("먼저 명함 사진을 넣어주세요"); return Promise.resolve(); }
-    if (showResult) toast("명함에서 QR 찾는 중…");
+    if (!v.cards.length) { if (showResult) toast(t("needCardFirst")); return Promise.resolve(); }
+    if (showResult) toast(t("qrSearching"));
     var found = null;
     var chain = v.cards.reduce(function (prev, id) {
       return prev.then(function () {
@@ -725,21 +919,21 @@
 
     return chain.then(function () { return found; }).then(function (text) {
       if (!text) {
-        if (showResult) toast("QR을 찾지 못했습니다");
+        if (showResult) toast(t("qrNotFound"));
         return;
       }
       if (v.cardQr === text) {
-        if (showResult) toast("이미 저장된 QR입니다");
+        if (showResult) toast(t("qrSame"));
         return;
       }
       v.cardQr = text;
       save();
-      return render().then(function () { toast(qrLabel(text) + "를 찾았습니다"); });
+      return render().then(function () { toast(t("qrFound", qrLabel(text))); });
     });
   }
 
   function copyToClipboard(text, doneMsg) {
-    var done = function () { toast(doneMsg || "복사했습니다"); };
+    var done = function () { toast(doneMsg || t("copied")); };
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).then(done)["catch"](function () { legacyCopy(text, done); });
     } else {
@@ -749,27 +943,27 @@
 
   /* ────────── 중국어로 물어보기 ────────── */
   var PHRASES = {
-    price:        { zh: "这个多少钱？",        pinyin: "zhè ge duō shao qián?",              ko: "이거 얼마예요?" },
-    moq:          { zh: "最少订多少个？",      pinyin: "zuì shǎo dìng duō shao ge?",         ko: "최소 몇 개부터 주문할 수 있어요?" },
-    cheaper:      { zh: "能便宜点吗？",        pinyin: "néng pián yi diǎn ma?",              ko: "좀 깎아줄 수 있어요?" },
-    tooExpensive: { zh: "太贵了，再便宜一点。", pinyin: "tài guì le, zài pián yi yī diǎn.",   ko: "너무 비싸요, 조금만 더 싸게요." },
-    bulkPrice:    { zh: "多订能便宜吗？",      pinyin: "duō dìng néng pián yi ma?",          ko: "많이 주문하면 더 싸지나요?" },
-    sample:       { zh: "有样品吗？",          pinyin: "yǒu yàng pǐn ma?",                   ko: "샘플 있어요?" },
-    otherColor:   { zh: "有没有别的颜色？",    pinyin: "yǒu méi yǒu bié de yán sè?",         ko: "다른 색 있어요?" },
-    photoOk:      { zh: "可以拍照吗？",        pinyin: "kě yǐ pāi zhào ma?",                 ko: "사진 찍어도 돼요?" },
-    mixOrder:     { zh: "可以混批吗？",        pinyin: "kě yǐ hùn pī ma?",                   ko: "여러 종류 섞어서 주문돼요?" },
-    takeNow:      { zh: "可以马上拿货吗？",    pinyin: "kě yǐ mǎ shàng ná huò ma?",          ko: "바로 받아갈 수 있어요?" },
-    inStock:      { zh: "有现货吗？",          pinyin: "yǒu xiàn huò ma?",                   ko: "지금 바로 되는 재고 있어요?" },
-    shipTime:     { zh: "多久能发货？",        pinyin: "duō jiǔ néng fā huò?",               ko: "발송까지 얼마나 걸려요?" },
-    shipKorea:    { zh: "可以发货到韩国吗？",  pinyin: "kě yǐ fā huò dào hán guó ma?",       ko: "한국으로 보낼 수 있어요?" },
-    wechat:       { zh: "加个微信可以吗？",    pinyin: "jiā ge wēi xìn kě yǐ ma?",           ko: "위챗 추가해도 될까요?" },
-    card:         { zh: "可以给我一张名片吗？", pinyin: "kě yǐ gěi wǒ yī zhāng míng piàn ma?", ko: "명함 한 장 주시겠어요?" }
+    price:        { zh: "这个多少钱？",        pinyin: "zhè ge duō shao qián?",              ko: "이거 얼마예요?", en: "How much is this?" },
+    moq:          { zh: "最少订多少个？",      pinyin: "zuì shǎo dìng duō shao ge?",         ko: "최소 몇 개부터 주문할 수 있어요?", en: "What is the minimum order quantity?" },
+    cheaper:      { zh: "能便宜点吗？",        pinyin: "néng pián yi diǎn ma?",              ko: "좀 깎아줄 수 있어요?", en: "Can you give me a better price?" },
+    tooExpensive: { zh: "太贵了，再便宜一点。", pinyin: "tài guì le, zài pián yi yī diǎn.",   ko: "너무 비싸요, 조금만 더 싸게요.", en: "That's too expensive — a little cheaper, please." },
+    bulkPrice:    { zh: "多订能便宜吗？",      pinyin: "duō dìng néng pián yi ma?",          ko: "많이 주문하면 더 싸지나요?", en: "Is it cheaper if I order more?" },
+    sample:       { zh: "有样品吗？",          pinyin: "yǒu yàng pǐn ma?",                   ko: "샘플 있어요?", en: "Do you have a sample?" },
+    otherColor:   { zh: "有没有别的颜色？",    pinyin: "yǒu méi yǒu bié de yán sè?",         ko: "다른 색 있어요?", en: "Do you have other colors?" },
+    photoOk:      { zh: "可以拍照吗？",        pinyin: "kě yǐ pāi zhào ma?",                 ko: "사진 찍어도 돼요?", en: "May I take photos?" },
+    mixOrder:     { zh: "可以混批吗？",        pinyin: "kě yǐ hùn pī ma?",                   ko: "여러 종류 섞어서 주문돼요?", en: "Can I mix different styles in one order?" },
+    takeNow:      { zh: "可以马上拿货吗？",    pinyin: "kě yǐ mǎ shàng ná huò ma?",          ko: "바로 받아갈 수 있어요?", en: "Can I take the goods right now?" },
+    inStock:      { zh: "有现货吗？",          pinyin: "yǒu xiàn huò ma?",                   ko: "지금 바로 되는 재고 있어요?", en: "Do you have it in stock now?" },
+    shipTime:     { zh: "多久能发货？",        pinyin: "duō jiǔ néng fā huò?",               ko: "발송까지 얼마나 걸려요?", en: "How long until you can ship?" },
+    shipKorea:    { zh: "可以发货到韩国吗？",  pinyin: "kě yǐ fā huò dào hán guó ma?",       ko: "한국으로 보낼 수 있어요?", en: "Can you ship to Korea?" },
+    wechat:       { zh: "加个微信可以吗？",    pinyin: "jiā ge wēi xìn kě yǐ ma?",           ko: "위챗 추가해도 될까요?", en: "May I add you on WeChat?" },
+    card:         { zh: "可以给我一张名片吗？", pinyin: "kě yǐ gěi wǒ yī zhāng míng piàn ma?", ko: "명함 한 장 주시겠어요?", en: "Could I have a business card?" }
   };
 
   var PHRASE_GROUPS = [
-    { title: "가격 · 주문", keys: ["price", "moq", "cheaper", "tooExpensive", "bulkPrice"] },
-    { title: "물건", keys: ["sample", "otherColor", "photoOk", "mixOrder", "takeNow", "inStock"] },
-    { title: "배송 · 연락처", keys: ["shipTime", "shipKorea", "card", "wechat"] }
+    { title: "groupPrice", keys: ["price", "moq", "cheaper", "tooExpensive", "bulkPrice"] },
+    { title: "groupItem", keys: ["sample", "otherColor", "photoOk", "mixOrder", "takeNow", "inStock"] },
+    { title: "groupContact", keys: ["shipTime", "shipKorea", "card", "wechat"] }
   ];
 
   var zhVoice = null;
@@ -824,13 +1018,11 @@
     back.innerHTML = '<div class="phrase">' +
       '<div class="zh">' + esc(ph.zh) + '</div>' +
       '<div class="pinyin">' + esc(ph.pinyin) + '</div>' +
-      '<div class="ko">' + esc(ph.ko) + '</div>' +
-      '<div class="note">' + (noVoice
-        ? "이 폰에 중국어 음성이 없어 소리가 안 날 수 있어요.<br>화면을 그대로 보여주세요."
-        : "소리가 작으면 화면을 그대로 보여주세요.") + '</div>' +
+      '<div class="ko">' + esc(ph[lang] || ph.ko) + '</div>' +
+      '<div class="note">' + (noVoice ? t("noteNoVoice") : t("noteQuiet")) + '</div>' +
       '<div class="btns">' +
-        '<button data-close="1">닫기</button>' +
-        '<button class="primary" data-again="1">🔊 다시 듣기</button>' +
+        '<button data-close="1">' + esc(t("close")) + '</button>' +
+        '<button class="primary" data-again="1">' + esc(t("again")) + '</button>' +
       '</div></div>';
 
     back.addEventListener("click", function (e) {
@@ -846,12 +1038,12 @@
   function openPhraseList() {
     var html = '<div class="sheet">';
     PHRASE_GROUPS.forEach(function (g) {
-      html += '<h3>' + esc(g.title) + '</h3>';
+      html += '<h3>' + esc(t(g.title)) + '</h3>';
       g.keys.forEach(function (k) {
         var ph = PHRASES[k];
         if (!ph) return;
         html += '<button class="sheet-item phrase-row" data-phrase="' + esc(k) + '">' +
-          '<span class="grow"><b>' + esc(ph.zh) + '</b><br><span class="sub">' + esc(ph.ko) + '</span></span>' +
+          '<span class="grow"><b>' + esc(ph.zh) + '</b><br><span class="sub">' + esc(ph[lang] || ph.ko) + '</span></span>' +
           '<span class="sub">🔊</span></button>';
       });
     });
@@ -881,13 +1073,13 @@
       return '<div class="shot filled" data-view="' + esc(id) + '">' +
         (url ? '<img src="' + esc(url) + '" alt="">' : "") +
         '<span class="shot-no">' + (i + 1) + ' / ' + ids.length + '</span>' +
-        '<button class="shot-del" data-del-photo="' + esc(target + ":" + i) + '" aria-label="이 사진 삭제">✕</button>' +
+        '<button class="shot-del" data-del-photo="' + esc(target + ":" + i) + '" aria-label="' + esc(t("photoDelAria")) + '">✕</button>' +
         '</div>';
     }).join("");
 
     tiles += '<div class="shot add" data-shoot="' + esc(target) + '">' +
       '<div class="cam">📷</div>' +
-      '<div class="hint">' + (ids.length ? "사진 추가" : esc(hint)) + '</div></div>';
+      '<div class="hint">' + (ids.length ? esc(t("addPhoto")) : esc(hint)) + '</div></div>';
 
     return '<div class="strip ' + kind + (ids.length ? "" : " empty") + '">' + tiles + '</div>';
   }
@@ -900,13 +1092,13 @@
         '<div class="qr-info"><span class="qr-tag">' + esc(qrLabel(v.cardQr)) + '</span>' +
         '<span class="qr-text">' + esc(shortText(v.cardQr, 34)) + '</span></div>' +
         '<div class="qr-btns">' +
-          (link ? '<button class="qr-btn primary" data-qr="open">열기</button>' : "") +
-          '<button class="qr-btn" data-qr="copy">복사</button>' +
-          '<button class="qr-btn" data-qr="clear" aria-label="QR 삭제">✕</button>' +
+          (link ? '<button class="qr-btn primary" data-qr="open">' + esc(t("open")) + '</button>' : "") +
+          '<button class="qr-btn" data-qr="copy">' + esc(t("copy")) + '</button>' +
+          '<button class="qr-btn" data-qr="clear" aria-label="' + esc(t("qrDelAria")) + '">✕</button>' +
         '</div></div>';
     }
     if (!v.cards.length) return "";
-    return '<div class="qr-row"><button class="qr-btn wide" data-qr="scan">🔍 명함에서 QR 찾기 (위챗 등)</button></div>';
+    return '<div class="qr-row"><button class="qr-btn wide" data-qr="scan">' + esc(t("qrScan")) + '</button></div>';
   }
 
   function render() {
@@ -920,31 +1112,32 @@
     v.items.forEach(function (it) { ids = ids.concat(it.photos); });
 
     return ensureURLs(ids).then(function () {
-      var cur = CURRENCIES[v.currency] || CURRENCIES.KRW;
       var html = "";
       var m = market();
 
       /* 시장(카테고리) — 한 번만 입력하면 이 시장의 모든 업체 페이지에 따라다닌다 */
       html += '<section class="market-bar">' +
-        '<span class="market-tag">시장</span>' +
-        '<input class="market-input" type="text" data-field="market" placeholder="시장 이름 (예: 이우시장)" value="' + esc(m.name) + '">' +
-        '<button class="market-more" data-market-menu="1">시장 ' + (state.currentMarket + 1) + '/' + state.markets.length + ' ▾</button>' +
+        '<span class="market-tag">' + esc(t("marketTag")) + '</span>' +
+        '<input class="market-input" type="text" data-field="market" placeholder="' + esc(t("marketPlaceholder")) + '" value="' + esc(m.name) + '">' +
+        '<button class="market-more" data-market-menu="1">' +
+          esc(t("marketBtn", state.currentMarket + 1, state.markets.length)) + '</button>' +
         '</section>';
 
       /* 명함 블록 */
       html += '<section class="block vendor-head">' +
         '<div class="block-label">' +
-          '<span class="label-say">명함 · 업체 정보' +
-            '<button class="say" data-say="card" aria-label="중국어로 명함 요청하기">🔊</button></span>' +
-          '<span class="num">업체 ' + (state.current + 1) + '</span></div>' +
-        photoStrip("card", "card", v.cards, "명함 사진 촬영") +
+          '<span class="label-say">' + esc(t("cardBlock")) +
+            '<button class="say" data-say="card" aria-label="' + esc(t("sayCardAria")) + '">🔊</button></span>' +
+          '<span class="num">' + esc(t("vendorChip", state.current + 1)) + '</span></div>' +
+        photoStrip("card", "card", v.cards, t("cardShoot")) +
         cardQrRow(v) +
-        '<div class="field"><label>업체명 / 담당자</label>' +
-          '<input class="input" type="text" data-field="name" placeholder="' + esc(vendorLabel(null, state.current)) + ' (안 쓰면 자동)" value="' + esc(v.name) + '"></div>' +
-        '<div class="field"><label>통화</label>' +
+        '<div class="field"><label>' + esc(t("vendorName")) + '</label>' +
+          '<input class="input" type="text" data-field="name" placeholder="' +
+            esc(t("vendorNameHint", vendorLabel(null, state.current))) + '" value="' + esc(v.name) + '"></div>' +
+        '<div class="field"><label>' + esc(t("currency")) + '</label>' +
           '<select class="input" data-field="currency">' +
             Object.keys(CURRENCIES).map(function (k) {
-              return '<option value="' + k + '"' + (v.currency === k ? " selected" : "") + '>' + CURRENCIES[k].label + '</option>';
+              return '<option value="' + k + '"' + (v.currency === k ? " selected" : "") + '>' + esc(curLabel(k)) + '</option>';
             }).join("") +
           '</select></div>' +
         '</section>';
@@ -952,30 +1145,30 @@
       /* 물건 블록 반복 */
       v.items.forEach(function (it, i) {
         html += '<section class="block" data-item="' + esc(it.id) + '">' +
-          '<div class="block-label"><span class="num">물건 ' + (i + 1) + '</span>' +
-            '<button class="del-btn" data-del-item="' + esc(it.id) + '">✕ 삭제</button></div>' +
-          photoStrip("item", "item:" + it.id, it.photos, "물건 사진 촬영") +
+          '<div class="block-label"><span class="num">' + esc(t("itemChip", i + 1)) + '</span>' +
+            '<button class="del-btn" data-del-item="' + esc(it.id) + '">' + esc(t("delBtn")) + '</button></div>' +
+          photoStrip("item", "item:" + it.id, it.photos, t("itemShoot")) +
           '<div class="row field">' +
-            '<div><div class="label-row"><span>가격 <b class="zh">价格</b></span>' +
-              '<button class="say" data-say="price" aria-label="중국어로 가격 물어보기">🔊</button></div>' +
+            '<div><div class="label-row"><span>' + esc(t("price")) + ' <b class="zh">价格</b></span>' +
+              '<button class="say" data-say="price" aria-label="' + esc(t("sayPriceAria")) + '">🔊</button></div>' +
               '<div class="with-suffix">' +
               '<input class="input" type="text" inputmode="decimal" data-field="price" placeholder="0" value="' + esc(it.price) + '">' +
-              '<span class="suffix">' + esc(cur.suffix) + '</span></div></div>' +
-            '<div><div class="label-row"><span>최소수량 <b class="zh">起订量</b></span>' +
-              '<button class="say" data-say="moq" aria-label="중국어로 최소수량 물어보기">🔊</button></div>' +
+              '<span class="suffix">' + esc(curSuffix(v.currency)) + '</span></div></div>' +
+            '<div><div class="label-row"><span>' + esc(t("moq")) + ' <b class="zh">起订量</b></span>' +
+              '<button class="say" data-say="moq" aria-label="' + esc(t("sayMoqAria")) + '">🔊</button></div>' +
               '<div class="with-suffix">' +
               '<input class="input" type="text" inputmode="numeric" data-field="moq" placeholder="0" value="' + esc(it.moq) + '">' +
-              '<span class="suffix">개</span></div></div>' +
+              '<span class="suffix">' + esc(t("moqUnit")) + '</span></div></div>' +
           '</div>' +
-          '<div class="field"><label>메모</label>' +
-            '<textarea class="input" data-field="memo" rows="1" placeholder="색상, 옵션, 납기, 샘플 여부 등">' + esc(it.memo) + '</textarea></div>' +
+          '<div class="field"><label>' + esc(t("memo")) + '</label>' +
+            '<textarea class="input" data-field="memo" rows="1" placeholder="' + esc(t("memoHint")) + '">' + esc(it.memo) + '</textarea></div>' +
           '</section>';
       });
 
       if (!v.items.length) {
-        html += '<p class="empty-note">아직 등록된 물건이 없습니다.</p>';
+        html += '<p class="empty-note">' + esc(t("noItems")) + '</p>';
       }
-      html += '<button class="add-item" data-add-item="1">+ 물건 추가</button>';
+      html += '<button class="add-item" data-add-item="1">' + esc(t("addItem")) + '</button>';
 
       page.innerHTML = html;
       page.querySelectorAll("textarea.input").forEach(autoGrow);
@@ -988,7 +1181,7 @@
     var total = vendors().length;
     document.getElementById("indicator").innerHTML =
       '<b>' + esc(vendorLabel(vendor(), state.current)) + '</b><br>' +
-      esc(marketLabel(m, state.currentMarket)) + " · " + (state.current + 1) + " / " + total + " 페이지";
+      esc(marketLabel(m, state.currentMarket)) + " · " + esc(t("pageInfo", state.current + 1, total));
     document.querySelector('[data-nav="prev"]').disabled = state.current === 0;
     document.querySelector('[data-nav="next"]').disabled = state.current === total - 1;
   }
@@ -1045,10 +1238,10 @@
     pendingTarget = target;
     var back = document.createElement("div");
     back.className = "backdrop";
-    back.innerHTML = '<div class="sheet"><h3>사진 넣기</h3>' +
-      '<button class="sheet-item" data-src="camera">📷 <span class="grow">카메라로 촬영</span></button>' +
-      '<button class="sheet-item" data-src="album">🖼 <span class="grow">앨범에서 선택</span></button>' +
-      '<button class="sheet-item" data-src="cancel"><span class="grow" style="color:var(--muted)">취소</span></button></div>';
+    back.innerHTML = '<div class="sheet"><h3>' + esc(t("photoSheet")) + '</h3>' +
+      '<button class="sheet-item" data-src="camera"><span class="grow">' + esc(t("photoCamera")) + '</span></button>' +
+      '<button class="sheet-item" data-src="album"><span class="grow">' + esc(t("photoAlbum")) + '</span></button>' +
+      '<button class="sheet-item" data-src="cancel"><span class="grow" style="color:var(--muted)">' + esc(t("cancel")) + '</span></button></div>';
     back.addEventListener("click", function (e) {
       var btn = e.target.closest("[data-src]");
       if (!btn && e.target !== back) return;
@@ -1068,7 +1261,7 @@
     var target = pendingTarget;
     pendingTarget = null;
     var autoScan = null;
-    toast("사진 처리 중…");
+    toast(t("photoProcessing"));
     storePhoto(file).then(function (id) {
       var v = vendor();
       if (target === "card") {
@@ -1082,11 +1275,11 @@
       }
       save();
       return render().then(function () {
-        toast("사진이 저장되었습니다");
+        toast(t("photoSaved"));
         if (autoScan) scanCardPhoto(autoScan);   /* 명함이면 QR도 조용히 찾아본다 */
       });
     })["catch"](function () {
-      toast("사진을 넣지 못했습니다");
+      toast(t("photoFailed"));
     });
   }
 
@@ -1104,9 +1297,9 @@
       var v = vendor();
       if (act === "scan") scanCardQR(true);
       else if (act === "open" && v.cardQr) window.open(v.cardQr, "_blank", "noopener");
-      else if (act === "copy" && v.cardQr) copyToClipboard(v.cardQr, "링크를 복사했습니다");
+      else if (act === "copy" && v.cardQr) copyToClipboard(v.cardQr, t("linkCopied"));
       else if (act === "clear") {
-        confirmDialog("저장된 QR 링크를 지울까요?").then(function (ok) {
+        confirmDialog(t("delQrAsk")).then(function (ok) {
           if (!ok) return;
           delete v.cardQr;
           save(); render();
@@ -1126,7 +1319,7 @@
       var parts = del.dataset.delPhoto.split(":");      /* card:2 또는 item:<id>:1 */
       var index = parseInt(parts[parts.length - 1], 10);
       var isCard = parts[0] === "card";
-      confirmDialog("이 사진을 삭제할까요?").then(function (ok) {
+      confirmDialog(t("delPhotoAsk")).then(function (ok) {
         if (!ok) return;
         var v = vendor();
         var list = isCard ? v.cards
@@ -1146,7 +1339,7 @@
     var delItem = e.target.closest("[data-del-item]");
     if (delItem) {
       var id = delItem.dataset.delItem;
-      confirmDialog("이 물건 정보를 삭제할까요?\n사진과 메모가 함께 지워집니다.").then(function (ok) {
+      confirmDialog(t("delItemAsk")).then(function (ok) {
         if (!ok) return;
         var v = vendor();
         var it = v.items.filter(function (x) { return x.id === id; })[0];
@@ -1194,7 +1387,7 @@
   function addVendor() {
     vendors().push(newVendor(vendor().currency));
     goTo(vendors().length - 1);
-    toast("새 업체가 추가되었습니다");
+    toast(t("vendorAdded"));
   }
 
   document.querySelector(".bottombar").addEventListener("click", function (e) {
@@ -1211,8 +1404,8 @@
       return '<div class="sheet-row">' +
         '<button class="sheet-item' + (i === state.currentMarket ? " active" : "") + '" data-market="' + i + '">' +
           '<span class="grow">🏬 ' + esc(marketLabel(m, i)) + '</span>' +
-          '<span class="sub">업체 ' + m.vendors.length + '</span></button>' +
-        '<button class="row-del" data-del-market="' + i + '" aria-label="시장 삭제">🗑</button>' +
+          '<span class="sub">' + esc(t("vendorCount", m.vendors.length)) + '</span></button>' +
+        '<button class="row-del" data-del-market="' + i + '" aria-label="' + esc(t("delMarketAria")) + '">🗑</button>' +
         '</div>';
     }).join("");
 
@@ -1220,23 +1413,24 @@
       return '<div class="sheet-row">' +
         '<button class="sheet-item' + (i === state.current ? " active" : "") + '" data-go="' + i + '">' +
           '<span class="grow">' + (i + 1) + ". " + esc(vendorLabel(v, i)) + '</span>' +
-          '<span class="sub">물건 ' + filledItems(v).length + '</span></button>' +
-        '<button class="row-del" data-del-vendor="' + i + '" aria-label="업체 페이지 삭제">🗑</button>' +
+          '<span class="sub">' + esc(t("itemCount", filledItems(v).length)) + '</span></button>' +
+        '<button class="row-del" data-del-vendor="' + i + '" aria-label="' + esc(t("delVendorAria")) + '">🗑</button>' +
         '</div>';
     }).join("");
 
     var back = document.createElement("div");
     back.className = "backdrop";
     back.innerHTML = '<div class="sheet">' +
-      '<h3>시장 (' + state.markets.length + ')</h3>' + marketList +
-      '<button class="sheet-item" data-act="addMarket"><span class="grow">➕ 새 시장 추가</span></button>' +
-      '<h3>' + esc(marketLabel(market(), state.currentMarket)) + '의 업체 페이지 (' + vendors().length + ')</h3>' + list +
-      '<button class="sheet-item" data-act="add"><span class="grow">➕ 새 업체 추가</span></button>' +
-      '<h3>관리</h3>' +
-      '<button class="sheet-item" data-act="copy"><span class="grow">📋 현재 업체 텍스트 복사</span></button>' +
-      '<button class="sheet-item" data-act="excel"><span class="grow">📊 엑셀(XLSX) 다운로드 — 사진 포함</span></button>' +
-      '<button class="sheet-item" data-act="backup"><span class="grow">💾 전체 백업 저장 (사진 포함)</span></button>' +
-      '<button class="sheet-item" data-act="restore"><span class="grow">📂 백업 불러오기</span></button>' +
+      '<h3>' + esc(t("marketsHead", state.markets.length)) + '</h3>' + marketList +
+      '<button class="sheet-item" data-act="addMarket"><span class="grow">' + esc(t("addMarket")) + '</span></button>' +
+      '<h3>' + esc(t("vendorsHead", marketLabel(market(), state.currentMarket), vendors().length)) + '</h3>' + list +
+      '<button class="sheet-item" data-act="add"><span class="grow">' + esc(t("addVendorRow")) + '</span></button>' +
+      '<h3>' + esc(t("manage")) + '</h3>' +
+      '<button class="sheet-item" data-act="copy"><span class="grow">' + esc(t("menuCopy")) + '</span></button>' +
+      '<button class="sheet-item" data-act="excel"><span class="grow">' + esc(t("menuExcel")) + '</span></button>' +
+      '<button class="sheet-item" data-act="backup"><span class="grow">' + esc(t("menuBackup")) + '</span></button>' +
+      '<button class="sheet-item" data-act="restore"><span class="grow">' + esc(t("menuRestore")) + '</span></button>' +
+      '<button class="sheet-item" data-act="lang"><span class="grow">' + esc(t("menuLang")) + '</span></button>' +
       '</div>';
 
     back.addEventListener("click", function (e) {
@@ -1263,7 +1457,7 @@
     } else if (act === "addMarket") {
       state.markets.push(newMarket());
       goToMarket(state.markets.length - 1);
-      toast("새 시장이 추가되었습니다");
+      toast(t("marketAdded"));
     } else if (act === "copy") {
       copyText();
     } else if (act === "excel") {
@@ -1272,6 +1466,8 @@
       backup();
     } else if (act === "restore") {
       document.getElementById("fileRestore").click();
+    } else if (act === "lang") {
+      openLangSheet();
     } else if (act === "delVendor") {
       deleteVendor(state.current);
     } else if (act === "delMarket") {
@@ -1288,49 +1484,74 @@
     var list = vendors();
     var v = list[index];
     if (!v) return;
-    confirmDialog('"' + vendorLabel(v, index) + '" 업체 페이지를 삭제할까요?\n명함과 물건 정보가 모두 지워집니다.').then(function (ok) {
+    confirmDialog(t("delVendorAsk", vendorLabel(v, index))).then(function (ok) {
       if (!ok) return;
       dropVendorPhotos(v);
       list.splice(index, 1);
       if (!list.length) list.push(newVendor());
       goTo(state.current > index ? state.current - 1 : Math.min(state.current, list.length - 1));
-      toast("업체 페이지를 삭제했습니다");
+      toast(t("vendorDeleted"));
     });
   }
 
   function deleteMarket(index) {
     var m = state.markets[index];
     if (!m) return;
-    confirmDialog('"' + marketLabel(m, index) + '" 시장을 통째로 삭제할까요?\n이 시장의 업체 ' + m.vendors.length + '곳이 모두 지워집니다.').then(function (ok) {
+    confirmDialog(t("delMarketAsk", marketLabel(m, index), m.vendors.length)).then(function (ok) {
       if (!ok) return;
       m.vendors.forEach(dropVendorPhotos);
       state.markets.splice(index, 1);
       if (!state.markets.length) state.markets.push(newMarket());
       var next = state.currentMarket > index ? state.currentMarket - 1 : Math.min(state.currentMarket, state.markets.length - 1);
       goToMarket(next);
-      toast("시장을 삭제했습니다");
+      toast(t("marketDeleted"));
     });
   }
 
+  var LANGS = [{ code: "ko", name: "한국어" }, { code: "en", name: "English" }];
+  function openLangSheet() {
+    var back = document.createElement("div");
+    back.className = "backdrop";
+    back.innerHTML = '<div class="sheet"><h3>' + esc(t("langTitle")) + '</h3>' +
+      LANGS.map(function (l) {
+        return '<button class="sheet-item' + (l.code === lang ? " active" : "") + '" data-lang="' + l.code + '">' +
+          '<span class="grow">' + esc(l.name) + '</span>' +
+          (l.code === lang ? '<span class="sub">✓</span>' : "") + '</button>';
+      }).join("") + '</div>';
+    back.addEventListener("click", function (e) {
+      var row = e.target.closest("[data-lang]");
+      if (row) { back.remove(); setLang(row.dataset.lang); return; }
+      if (e.target === back) back.remove();
+    });
+    document.body.appendChild(back);
+  }
+  function setLang(code) {
+    if (!I18N[code] || code === lang) return;
+    lang = code;
+    state.lang = code;
+    save();
+    applyLang();
+    render();
+  }
+
   function vendorToText(v, index) {
-    var cur = CURRENCIES[v.currency] || CURRENCIES.KRW;
     var lines = ["[" + marketLabel(market(), state.currentMarket) + "] " + vendorLabel(v, index)];
-    if (v.cardQr) lines.push("명함 " + qrLabel(v.cardQr) + ": " + v.cardQr);
+    if (v.cardQr) lines.push(t("cardQrText", qrLabel(v.cardQr), v.cardQr));
     var items = filledItems(v);
-    if (!items.length) lines.push("- 등록된 물건 없음");
+    if (!items.length) lines.push(t("noItemsText"));
     items.forEach(function (it, i) {
       var parts = [];
-      if (it.price) parts.push("가격 " + it.price + cur.suffix);
-      if (it.moq) parts.push("최소수량 " + it.moq + "개");
-      lines.push("- 물건 " + (i + 1) + (parts.length ? ": " + parts.join(" / ") : ""));
-      if (it.memo) lines.push("  메모: " + it.memo.replace(/\n/g, " "));
+      if (it.price) parts.push(t("priceText", it.price + curSuffix(v.currency)));
+      if (it.moq) parts.push(t("moqText", it.moq));
+      lines.push(t("itemLineNo", i + 1) + (parts.length ? ": " + parts.join(" / ") : ""));
+      if (it.memo) lines.push(t("memoText", it.memo.replace(/\n/g, " ")));
     });
     return lines.join("\n");
   }
 
   function copyText() {
     var text = vendorToText(vendor(), state.current);
-    var done = function () { toast("텍스트를 복사했습니다"); };
+    var done = function () { toast(t("copied")); };
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).then(done)["catch"](function () { legacyCopy(text, done); });
     } else {
@@ -1344,12 +1565,12 @@
     ta.style.opacity = "0";
     document.body.appendChild(ta);
     ta.select();
-    try { document.execCommand("copy"); done(); } catch (e) { toast("복사에 실패했습니다"); }
+    try { document.execCommand("copy"); done(); } catch (e) { toast(t("copyFailed")); }
     ta.remove();
   }
 
   function backup() {
-    toast("백업 파일을 만드는 중…");
+    toast(t("backupMaking"));
     var ids = [];
     state.markets.forEach(function (m) {
       m.vendors.forEach(function (v) {
@@ -1368,23 +1589,23 @@
       var blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
       var d = new Date();
       var stamp = d.getFullYear() + ("0" + (d.getMonth() + 1)).slice(-2) + ("0" + d.getDate()).slice(-2);
-      downloadBlob(blob, "소싱노트-" + stamp + ".json");
-      toast("백업 파일을 저장했습니다");
-    })["catch"](function () { toast("백업에 실패했습니다"); });
+      downloadBlob(blob, t("backupFile", stamp));
+      toast(t("backupSaved"));
+    })["catch"](function () { toast(t("backupFailed")); });
   }
 
   document.getElementById("fileRestore").addEventListener("change", function () {
     var file = this.files && this.files[0];
     this.value = "";
     if (!file) return;
-    confirmDialog("백업을 불러오면 지금 입력한 내용이 모두 대체됩니다.\n계속할까요?", "불러오기").then(function (ok) {
+    confirmDialog(t("restoreAsk"), t("confirmRestore")).then(function (ok) {
       if (!ok) return;
       var reader = new FileReader();
       reader.onload = function () {
         var payload;
-        try { payload = JSON.parse(reader.result); } catch (e) { toast("백업 파일을 읽을 수 없습니다"); return; }
+        try { payload = JSON.parse(reader.result); } catch (e) { toast(t("unreadableFile")); return; }
         var restored = payload && payload.state ? migrate(payload.state) : null;
-        if (!restored) { toast("형식이 맞지 않는 파일입니다"); return; }
+        if (!restored) { toast(t("badFile")); return; }
         Object.keys(urlCache).forEach(function (id) { URL.revokeObjectURL(urlCache[id]); delete urlCache[id]; });
         var images = payload.images || {};
         Promise.all(Object.keys(images).map(function (id) {
@@ -1393,8 +1614,8 @@
           state = normalize(restored);
           save();
           return render();
-        }).then(function () { toast("백업을 불러왔습니다"); window.scrollTo(0, 0); })
-        ["catch"](function () { toast("불러오기에 실패했습니다"); });
+        }).then(function () { toast(t("restored")); window.scrollTo(0, 0); })
+        ["catch"](function () { toast(t("restoreFailed")); });
       };
       reader.readAsText(file);
     });
@@ -1545,7 +1766,7 @@
     return cellStr(col, row, text, textStyle);
   }
 
-  var XLSX_HEADERS = ["시장", "업체 번호", "업체명 / 담당자", "통화", "명함", "명함 QR / 위챗 링크", "물건 번호", "물건 사진", "가격", "최소수량", "메모"];
+  function xlsxHeaders() { return t("xlsxHeaders"); }
   var XLSX_WIDTHS = [18, 9, 24, 12, 34, 38, 9, 34, 14, 12, 46];
   var COL_CARD = 4, COL_PHOTO = 7;      // 명함 / 물건 사진이 들어갈 열 (0-based)
 
@@ -1554,8 +1775,8 @@
       '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
       '<numFmts count="1"><numFmt numFmtId="164" formatCode="#,##0.##"/></numFmts>' +
       '<fonts count="2">' +
-        '<font><sz val="11"/><color rgb="FF2B2B2B"/><name val="맑은 고딕"/></font>' +
-        '<font><b/><sz val="11"/><color rgb="FFB2412F"/><name val="맑은 고딕"/></font>' +
+        '<font><sz val="11"/><color rgb="FF2B2B2B"/><name val="' + xmlEsc(t("xlsxFont")) + '"/></font>' +
+        '<font><b/><sz val="11"/><color rgb="FFB2412F"/><name val="' + xmlEsc(t("xlsxFont")) + '"/></font>' +
       '</fonts>' +
       '<fills count="3">' +
         '<fill><patternFill patternType="none"/></fill>' +
@@ -1591,7 +1812,7 @@
       x += '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w + '" customWidth="1"/>';
     });
     x += '</cols><sheetData><row r="1" ht="28" customHeight="1">';
-    XLSX_HEADERS.forEach(function (h, i) { x += cellStr(i, 1, h, 1); });
+    xlsxHeaders().forEach(function (h, i) { x += cellStr(i, 1, h, 1); });
     x += '</row>';
 
     rows.forEach(function (row, i) {
@@ -1611,7 +1832,7 @@
         '</row>';
     });
 
-    x += '</sheetData><autoFilter ref="A1:' + colLetter(XLSX_HEADERS.length - 1) + (rows.length + 1) + '"/>';
+    x += '</sheetData><autoFilter ref="A1:' + colLetter(xlsxHeaders().length - 1) + (rows.length + 1) + '"/>';
     if (hasDrawing) x += '<drawing r:id="rId1"/>';
     return x + '</worksheet>';
   }
@@ -1647,7 +1868,6 @@
     var rows = [], picJobs = [];
     state.markets.forEach(function (m, mi) {
       m.vendors.forEach(function (v, vi) {
-        var cur = CURRENCIES[v.currency] || CURRENCIES.KRW;
         var items = filledItems(v);
         if (!items.length) items = [null];      // 물건이 하나도 없으면 업체 줄만 남김
         items.forEach(function (it, ii) {
@@ -1655,7 +1875,7 @@
             market: marketLabel(m, mi),
             vendorNo: vi + 1,
             vendorName: vendorLabel(v, vi),
-            currency: cur.label,
+            currency: curLabel(v.currency),
             qr: ii === 0 ? (v.cardQr || "") : "",
             itemNo: it ? ii + 1 : 0,
             price: it ? it.price : "",
@@ -1674,8 +1894,8 @@
       });
     });
 
-    if (!rows.length) { toast("내보낼 내용이 없습니다"); return; }
-    toast("엑셀 파일 만드는 중…");
+    if (!rows.length) { toast(t("nothingToExport")); return; }
+    toast(t("xlsxMaking"));
 
     return Promise.all(picJobs.map(function (job) {
       return dbGet("images", job.id).then(function (blob) {
@@ -1705,7 +1925,7 @@
       var workbook = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
         '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"' +
         ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
-        '<sheets><sheet name="소싱목록" sheetId="1" r:id="rId1"/></sheets></workbook>';
+        '<sheets><sheet name="' + xmlEsc(t("sheetName")) + '" sheetId="1" r:id="rId1"/></sheets></workbook>';
 
       var workbookRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
         '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
@@ -1742,10 +1962,10 @@
       var blob = zipBlob(files);
       var d = new Date();
       var stamp = d.getFullYear() + ("0" + (d.getMonth() + 1)).slice(-2) + ("0" + d.getDate()).slice(-2);
-      downloadBlob(blob, "소싱목록-" + stamp + ".xlsx");
-      toast("엑셀 파일을 저장했습니다");
+      downloadBlob(blob, t("xlsxFile", stamp));
+      toast(t("xlsxSaved"));
     })["catch"](function () {
-      toast("엑셀 저장에 실패했습니다");
+      toast(t("xlsxFailed"));
     });
   }
 
@@ -1764,6 +1984,9 @@
   dbGet("kv", "state").then(function (saved) {
     var restored = migrate(saved);
     state = restored ? normalize(restored) : { markets: [newMarket()], currentMarket: 0, current: 0 };
+    lang = (state.lang && I18N[state.lang]) ? state.lang : detectLang();
+    state.lang = lang;
+    applyLang();
     if (saved) save();        /* 옛 형식을 읽었으면 새 형식으로 다시 저장해둔다 */
     return render();
   }).then(function () {
@@ -1772,8 +1995,10 @@
     else setTimeout(preload, 4000);
   })["catch"](function () {
     state = { markets: [newMarket()], currentMarket: 0, current: 0 };
+    lang = detectLang();
+    applyLang();
     render();
-    toast("저장 공간을 쓸 수 없어 임시로 동작합니다");
+    toast(t("storageWarn"));
   });
 })();
 </script>
