@@ -131,6 +131,30 @@
   }
 
   /* ── 입력 ── */
+  /* ── 명함 QR 줄 ── */
+  .qr-row {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    margin-top: 10px; padding: 10px;
+    background: #fbfaf8; border: 1px solid var(--border); border-radius: 12px;
+  }
+  .qr-info { flex: 1; min-width: 0; display: flex; align-items: center; gap: 7px; }
+  .qr-tag {
+    flex: none; font-size: 11px; font-weight: 800; color: #1f9d55;
+    background: #e4f5ea; border-radius: 7px; padding: 3px 7px;
+  }
+  .qr-text {
+    flex: 1; min-width: 0; font-size: 12px; color: var(--muted);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .qr-btns { flex: none; display: flex; gap: 6px; }
+  .qr-btn {
+    border: 1px solid var(--border); background: var(--card); color: var(--text);
+    border-radius: 10px; padding: 8px 11px; font-size: 13px; font-weight: 600;
+  }
+  .qr-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .qr-btn.wide { width: 100%; color: var(--muted); font-weight: 600; }
+  .qr-btn:active { filter: brightness(0.95); }
+
   .field { margin-top: 12px; }
   .field > label {
     display: block; font-size: 12px; font-weight: 700;
@@ -581,6 +605,92 @@
     });
   }
 
+  /* ────────── 명함 QR 인식 ────────── */
+  var qrLoader = null;
+  function ensureJsQR() {
+    if (window.jsQR) return Promise.resolve(true);
+    if (qrLoader) return qrLoader;
+    qrLoader = new Promise(function (resolve) {
+      var sc = document.createElement("script");
+      sc.src = "jsqr.min.js";
+      sc.async = true;
+      sc.onload = function () { resolve(!!window.jsQR); };
+      sc.onerror = function () { qrLoader = null; resolve(false); };
+      document.head.appendChild(sc);
+    });
+    return qrLoader;
+  }
+
+  /* 사진에서 QR을 찾아 문자열을 돌려준다 (없으면 null) */
+  function scanQR(blob) {
+    return ensureJsQR().then(function (ok) {
+      if (!ok) return null;
+      return loadBitmap(blob).then(function (src) {
+        var w0 = src.width || src.naturalWidth;
+        var h0 = src.height || src.naturalHeight;
+        var canvas = document.createElement("canvas");
+        var ctx = canvas.getContext("2d", { willReadFrequently: true });
+        var found = null;
+        /* 원본 크기로 먼저, 안 되면 절반으로 줄여 한 번 더 */
+        [1, 0.5].forEach(function (scale) {
+          if (found) return;
+          var w = Math.max(1, Math.round(w0 * scale));
+          var h = Math.max(1, Math.round(h0 * scale));
+          canvas.width = w; canvas.height = h;
+          ctx.drawImage(src, 0, 0, w, h);
+          var img = ctx.getImageData(0, 0, w, h);
+          var code = window.jsQR(img.data, w, h, { inversionAttempts: "attemptBoth" });
+          if (code && code.data) found = code.data;
+        });
+        if (src.close) src.close();
+        return found;
+      });
+    })["catch"](function () { return null; });
+  }
+
+  function isWechatLink(text) {
+    return /(?:u\.wechat\.com|weixin\.qq\.com|wxid|weixin:)/i.test(String(text || ""));
+  }
+  function qrLabel(text) {
+    return isWechatLink(text) ? "위챗 링크" : (/^https?:\/\//i.test(text) ? "QR 링크" : "QR 내용");
+  }
+  function shortText(text, max) {
+    text = String(text || "");
+    return text.length > max ? text.slice(0, max - 1) + "…" : text;
+  }
+
+  /* 명함 사진에서 QR을 찾아 업체에 저장 */
+  function scanCardQR(showResult) {
+    var v = vendor();
+    if (!v.card) { if (showResult) toast("먼저 명함 사진을 넣어주세요"); return Promise.resolve(); }
+    if (showResult) toast("명함에서 QR 찾는 중…");
+    return dbGet("images", v.card).then(function (blob) {
+      if (!blob) return null;
+      return scanQR(blob);
+    }).then(function (text) {
+      if (!text) {
+        if (showResult) toast("QR을 찾지 못했습니다");
+        return;
+      }
+      if (v.cardQr === text) {
+        if (showResult) toast("이미 저장된 QR입니다");
+        return;
+      }
+      v.cardQr = text;
+      save();
+      return render().then(function () { toast(qrLabel(text) + "를 찾았습니다"); });
+    });
+  }
+
+  function copyToClipboard(text, doneMsg) {
+    var done = function () { toast(doneMsg || "복사했습니다"); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done)["catch"](function () { legacyCopy(text, done); });
+    } else {
+      legacyCopy(text, done);
+    }
+  }
+
   /* ────────── 중국어로 물어보기 ────────── */
   var PHRASES = {
     price:        { zh: "这个多少钱？",        pinyin: "zhè ge duō shao qián?",              ko: "이거 얼마예요?" },
@@ -718,6 +828,23 @@
       '<div class="cam">📷</div><div class="hint">' + esc(hint) + '</div></div>';
   }
 
+  /* 명함 아래 QR 링크 줄 */
+  function cardQrRow(v) {
+    if (v.cardQr) {
+      var link = /^https?:\/\//i.test(v.cardQr);
+      return '<div class="qr-row">' +
+        '<div class="qr-info"><span class="qr-tag">' + esc(qrLabel(v.cardQr)) + '</span>' +
+        '<span class="qr-text">' + esc(shortText(v.cardQr, 34)) + '</span></div>' +
+        '<div class="qr-btns">' +
+          (link ? '<button class="qr-btn primary" data-qr="open">열기</button>' : "") +
+          '<button class="qr-btn" data-qr="copy">복사</button>' +
+          '<button class="qr-btn" data-qr="clear" aria-label="QR 삭제">✕</button>' +
+        '</div></div>';
+    }
+    if (!v.card) return "";
+    return '<div class="qr-row"><button class="qr-btn wide" data-qr="scan">🔍 명함에서 QR 찾기 (위챗 등)</button></div>';
+  }
+
   function render() {
     if (!state.markets.length) state.markets.push(newMarket());
     state.currentMarket = Math.max(0, Math.min(state.markets.length - 1, state.currentMarket));
@@ -743,6 +870,7 @@
       html += '<section class="block vendor-head">' +
         '<div class="block-label"><span>명함 · 업체 정보</span><span class="num">업체 ' + (state.current + 1) + '</span></div>' +
         photoSlot("card", "card", v.card, "명함 사진 촬영") +
+        cardQrRow(v) +
         '<div class="field"><label>업체명 / 담당자</label>' +
           '<input class="input" type="text" data-field="name" placeholder="' + esc(vendorLabel(null, state.current)) + ' (안 쓰면 자동)" value="' + esc(v.name) + '"></div>' +
         '<div class="field"><label>통화</label>' +
@@ -870,12 +998,15 @@
     if (!file || !pendingTarget) { pendingTarget = null; return; }
     var target = pendingTarget;
     pendingTarget = null;
+    var autoScan = false;
     toast("사진 처리 중…");
     storePhoto(file).then(function (id) {
       var v = vendor();
       if (target === "card") {
         dropPhoto(v.card);
         v.card = id;
+        delete v.cardQr;
+        autoScan = true;
       } else {
         var itemId = target.slice(5);
         var it = v.items.filter(function (x) { return x.id === itemId; })[0];
@@ -884,7 +1015,10 @@
         it.photo = id;
       }
       save();
-      return render().then(function () { toast("사진이 저장되었습니다"); });
+      return render().then(function () {
+        toast("사진이 저장되었습니다");
+        if (autoScan) scanCardQR(false);      /* 명함이면 QR도 조용히 찾아본다 */
+      });
     })["catch"](function () {
       toast("사진을 넣지 못했습니다");
     });
@@ -897,6 +1031,23 @@
   page.addEventListener("click", function (e) {
     var say = e.target.closest("[data-say]");
     if (say) { openPhrase(say.dataset.say); return; }
+
+    var qr = e.target.closest("[data-qr]");
+    if (qr) {
+      var act = qr.dataset.qr;
+      var v = vendor();
+      if (act === "scan") scanCardQR(true);
+      else if (act === "open" && v.cardQr) window.open(v.cardQr, "_blank", "noopener");
+      else if (act === "copy" && v.cardQr) copyToClipboard(v.cardQr, "링크를 복사했습니다");
+      else if (act === "clear") {
+        confirmDialog("저장된 QR 링크를 지울까요?").then(function (ok) {
+          if (!ok) return;
+          delete v.cardQr;
+          save(); render();
+        });
+      }
+      return;
+    }
     if (e.target.closest("[data-market-menu]")) {
       document.getElementById("menuBtn").click();
       return;
@@ -1095,6 +1246,7 @@
   function vendorToText(v, index) {
     var cur = CURRENCIES[v.currency] || CURRENCIES.KRW;
     var lines = ["[" + marketLabel(market(), state.currentMarket) + "] " + vendorLabel(v, index)];
+    if (v.cardQr) lines.push("명함 " + qrLabel(v.cardQr) + ": " + v.cardQr);
     var items = filledItems(v);
     if (!items.length) lines.push("- 등록된 물건 없음");
     items.forEach(function (it, i) {
@@ -1323,9 +1475,9 @@
     return cellStr(col, row, text, textStyle);
   }
 
-  var XLSX_HEADERS = ["시장", "업체 번호", "업체명 / 담당자", "통화", "명함", "물건 번호", "물건 사진", "가격", "최소수량", "메모"];
-  var XLSX_WIDTHS = [18, 9, 24, 12, 22, 9, 22, 14, 12, 46];
-  var COL_CARD = 4, COL_PHOTO = 6;      // 명함 / 물건 사진이 들어갈 열 (0-based)
+  var XLSX_HEADERS = ["시장", "업체 번호", "업체명 / 담당자", "통화", "명함", "명함 QR / 위챗 링크", "물건 번호", "물건 사진", "가격", "최소수량", "메모"];
+  var XLSX_WIDTHS = [18, 9, 24, 12, 22, 38, 9, 22, 14, 12, 46];
+  var COL_CARD = 4, COL_PHOTO = 7;      // 명함 / 물건 사진이 들어갈 열 (0-based)
 
   function stylesXML() {
     return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
@@ -1380,11 +1532,12 @@
         cellStr(2, r, row.vendorName, 4) +
         cellStr(3, r, row.currency, 2) +
         cellStr(4, r, "", 2) +
-        (row.itemNo ? cellNum(5, r, row.itemNo, 2) : cellStr(5, r, "", 2)) +
-        cellStr(6, r, "", 2) +
-        numericCell(7, r, row.price, 3, 2) +
-        numericCell(8, r, row.moq, 3, 2) +
-        cellStr(9, r, row.memo, 4) +
+        cellStr(5, r, row.qr, 4) +
+        (row.itemNo ? cellNum(6, r, row.itemNo, 2) : cellStr(6, r, "", 2)) +
+        cellStr(7, r, "", 2) +
+        numericCell(8, r, row.price, 3, 2) +
+        numericCell(9, r, row.moq, 3, 2) +
+        cellStr(10, r, row.memo, 4) +
         '</row>';
     });
 
@@ -1429,6 +1582,7 @@
             vendorNo: vi + 1,
             vendorName: vendorLabel(v, vi),
             currency: cur.label,
+            qr: ii === 0 ? (v.cardQr || "") : "",
             itemNo: it ? ii + 1 : 0,
             price: it ? it.price : "",
             moq: it ? it.moq : "",
@@ -1532,6 +1686,10 @@
     var restored = migrate(saved);
     state = restored ? normalize(restored) : { markets: [newMarket()], currentMarket: 0, current: 0 };
     return render();
+  }).then(function () {
+    var preload = function () { ensureJsQR(); };
+    if (window.requestIdleCallback) requestIdleCallback(preload, { timeout: 8000 });
+    else setTimeout(preload, 4000);
   })["catch"](function () {
     state = { markets: [newMarket()], currentMarket: 0, current: 0 };
     render();
