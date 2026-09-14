@@ -812,7 +812,7 @@
   function addVendor() {
     vendors().push(newVendor());
     goTo(vendors().length - 1);
-    toast("새 업체 페이지가 추가되었습니다");
+    toast("새 업체가 추가되었습니다");
   }
 
   document.querySelector(".bottombar").addEventListener("click", function (e) {
@@ -849,8 +849,8 @@
       '<h3>시장 (' + state.markets.length + ')</h3>' + marketList +
       '<button class="sheet-item" data-act="addMarket"><span class="grow">➕ 새 시장 추가</span></button>' +
       '<h3>' + esc(marketLabel(market(), state.currentMarket)) + '의 업체 페이지 (' + vendors().length + ')</h3>' + list +
+      '<button class="sheet-item" data-act="add"><span class="grow">➕ 새 업체 추가</span></button>' +
       '<h3>관리</h3>' +
-      '<button class="sheet-item" data-act="add"><span class="grow">➕ 새 업체 페이지</span></button>' +
       '<button class="sheet-item" data-act="copy"><span class="grow">📋 현재 업체 텍스트 복사</span></button>' +
       '<button class="sheet-item" data-act="excel"><span class="grow">📊 엑셀(XLSX) 다운로드 — 사진 포함</span></button>' +
       '<button class="sheet-item" data-act="backup"><span class="grow">💾 전체 백업 저장 (사진 포함)</span></button>' +
