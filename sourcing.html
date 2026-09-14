@@ -303,8 +303,18 @@
   function newItem() {
     return { id: uid(), photo: null, price: "", moq: "", memo: "" };
   }
+  var INITIAL_ITEMS = 2;              // 새 업체 페이지에 기본으로 열어두는 물건 칸 수
   function newVendor() {
-    return { id: uid(), name: "", card: null, currency: "KRW", items: [newItem()] };
+    var items = [];
+    for (var i = 0; i < INITIAL_ITEMS; i++) items.push(newItem());
+    return { id: uid(), name: "", card: null, currency: "KRW", items: items };
+  }
+  /* 사진·가격·수량·메모가 모두 비어 있으면 내보낼 때 제외 */
+  function isBlankItem(it) {
+    return !it.photo && !String(it.price).trim() && !String(it.moq).trim() && !String(it.memo).trim();
+  }
+  function filledItems(v) {
+    return v.items.filter(function (it) { return !isBlankItem(it); });
   }
   function vendor() { return state.vendors[state.current]; }
 
@@ -769,7 +779,9 @@
   function vendorToText(v, index) {
     var cur = CURRENCIES[v.currency] || CURRENCIES.KRW;
     var lines = ["[업체 " + (index + 1) + "] " + (v.name || "이름 없는 업체")];
-    v.items.forEach(function (it, i) {
+    var items = filledItems(v);
+    if (!items.length) lines.push("- 등록된 물건 없음");
+    items.forEach(function (it, i) {
       var parts = [];
       if (it.price) parts.push("가격 " + it.price + cur.suffix);
       if (it.moq) parts.push("최소수량 " + it.moq + "개");
@@ -1088,7 +1100,8 @@
     var rows = [], picJobs = [];
     state.vendors.forEach(function (v, vi) {
       var cur = CURRENCIES[v.currency] || CURRENCIES.KRW;
-      var items = v.items.length ? v.items : [null];
+      var items = filledItems(v);
+      if (!items.length) items = [null];        // 물건이 하나도 없으면 업체 줄만 남김
       items.forEach(function (it, ii) {
         rows.push({
           vendorNo: vi + 1,
