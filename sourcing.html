@@ -164,6 +164,7 @@
     display: flex; align-items: center; justify-content: space-between; gap: 6px;
     font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 6px;
   }
+  .label-say { display: inline-flex; align-items: center; gap: 7px; }
   .say {
     flex: none; border: 1px solid var(--border); background: var(--card);
     border-radius: 9px; padding: 2px 7px; font-size: 13px; line-height: 1.5;
@@ -712,13 +713,14 @@
     mixOrder:     { zh: "可以混批吗？",        pinyin: "kě yǐ hùn pī ma?",                   ko: "여러 종류 섞어서 주문돼요?" },
     shipTime:     { zh: "多久能发货？",        pinyin: "duō jiǔ néng fā huò?",               ko: "발송까지 얼마나 걸려요?" },
     shipKorea:    { zh: "可以发货到韩国吗？",  pinyin: "kě yǐ fā huò dào hán guó ma?",       ko: "한국으로 보낼 수 있어요?" },
-    wechat:       { zh: "加个微信可以吗？",    pinyin: "jiā ge wēi xìn kě yǐ ma?",           ko: "위챗 추가해도 될까요?" }
+    wechat:       { zh: "加个微信可以吗？",    pinyin: "jiā ge wēi xìn kě yǐ ma?",           ko: "위챗 추가해도 될까요?" },
+    card:         { zh: "可以给我一张名片吗？", pinyin: "kě yǐ gěi wǒ yī zhāng míng piàn ma?", ko: "명함 한 장 주시겠어요?" }
   };
 
   var PHRASE_GROUPS = [
     { title: "가격 · 주문", keys: ["price", "moq", "cheaper", "tooExpensive", "bulkPrice"] },
     { title: "물건", keys: ["sample", "otherColor", "photoOk", "mixOrder"] },
-    { title: "배송 · 연락처", keys: ["shipTime", "shipKorea", "wechat"] }
+    { title: "배송 · 연락처", keys: ["shipTime", "shipKorea", "card", "wechat"] }
   ];
 
   var zhVoice = null;
@@ -876,7 +878,10 @@
 
       /* 명함 블록 */
       html += '<section class="block vendor-head">' +
-        '<div class="block-label"><span>명함 · 업체 정보</span><span class="num">업체 ' + (state.current + 1) + '</span></div>' +
+        '<div class="block-label">' +
+          '<span class="label-say">명함 · 업체 정보' +
+            '<button class="say" data-say="card" aria-label="중국어로 명함 요청하기">🔊</button></span>' +
+          '<span class="num">업체 ' + (state.current + 1) + '</span></div>' +
         photoSlot("card", "card", v.card, "명함 사진 촬영") +
         cardQrRow(v) +
         '<div class="field"><label>업체명 / 담당자</label>' +
