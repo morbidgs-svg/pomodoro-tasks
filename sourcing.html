@@ -909,6 +909,87 @@
       moqText: function (v) { return "SL tối thiểu " + v + " cái"; },
       memoText: function (v) { return "  Ghi chú: " + v; },
       cardQrText: function (label, url) { return "Danh thiếp " + label + ": " + url; }
+    },
+
+    zh: {
+      title: "采购笔记",
+      menuAria: "菜单", phraseAria: "用中文询问", addVendor: "+ 商家",
+      marketTag: "市场", marketPlaceholder: "市场名称（例：义乌市场）",
+      marketBtn: function (i, n) { return "市场 " + i + "/" + n + " ▾"; },
+      cardBlock: "名片 · 商家信息",
+      sayCardAria: "用中文索取名片", sayPriceAria: "用中文询问价格", sayMoqAria: "用中文询问起订量",
+      vendorChip: function (n) { return "商家 " + n; },
+      vendorName: "商家名称 / 联系人",
+      vendorNameHint: function (auto) { return auto + "（不填则自动）"; },
+      currency: "货币",
+      itemChip: function (n) { return "货品 " + n; },
+      delBtn: "✕ 删除", price: "价格", moq: "起订量", memo: "备注",
+      memoHint: "颜色、款式、交期、样品等", moqUnit: "个",
+      cardShoot: "拍摄名片", itemShoot: "拍摄货品", addPhoto: "添加照片",
+      photoDelAria: "删除这张照片",
+      noItems: "还没有货品。", addItem: "+ 添加货品",
+      vendorAuto: function (n) { return "商家 " + n; },
+      marketAuto: function (n) { return "市场 " + n; },
+      pageInfo: function (i, n) { return i + " / " + n + " 页"; },
+      prevAria: "上一个商家", nextAria: "下一个商家",
+
+      photoSheet: "添加照片", photoCamera: "📷 拍照", photoAlbum: "🖼 从相册选择", cancel: "取消",
+
+      photoProcessing: "正在处理照片…", photoSaved: "照片已保存", photoFailed: "无法添加照片",
+      vendorAdded: "已添加新商家", marketAdded: "已添加新市场",
+      vendorDeleted: "已删除商家", marketDeleted: "已删除市场",
+      copied: "已复制", copyFailed: "复制失败", linkCopied: "已复制链接",
+      backupMaking: "正在生成备份文件…", backupSaved: "备份文件已保存", backupFailed: "备份失败",
+      restored: "已载入备份", restoreFailed: "载入备份失败",
+      unreadableFile: "无法读取备份文件", badFile: "文件格式不正确",
+      storageWarn: "无法使用存储空间，暂时以不保存的方式运行",
+      xlsxMaking: "正在生成 Excel 文件…", xlsxSaved: "Excel 文件已保存", xlsxFailed: "导出 Excel 失败",
+      nothingToExport: "暂无可导出的内容",
+      needCardFirst: "请先添加名片照片", qrSearching: "正在名片上查找二维码…",
+      qrNotFound: "未找到二维码", qrSame: "该二维码已保存",
+      qrFound: function (label) { return "找到了" + label; },
+
+      delPhotoAsk: "要删除这张照片吗？",
+      delItemAsk: "要删除这个货品吗？\n照片和备注也会一起删除。",
+      delVendorAsk: function (name) { return "要删除商家「" + name + "」吗？\n名片和全部货品信息都会删除。"; },
+      delMarketAsk: function (name, n) { return "要删除整个市场「" + name + "」吗？\n该市场的 " + n + " 个商家都会被删除。"; },
+      restoreAsk: "载入备份会覆盖当前所有内容。\n要继续吗？",
+      delQrAsk: "要删除已保存的二维码链接吗？",
+      confirmDel: "删除", confirmRestore: "载入",
+
+      marketsHead: function (n) { return "市场 (" + n + ")"; },
+      addMarket: "➕ 添加市场",
+      vendorsHead: function (name, n) { return name + " 的商家 (" + n + ")"; },
+      addVendorRow: "➕ 添加商家", manage: "管理",
+      menuCopy: "📋 复制当前商家为文本", menuExcel: "📊 下载 Excel(XLSX) — 含照片",
+      menuBackup: "💾 保存完整备份（含照片）", menuRestore: "📂 载入备份",
+      menuLang: "🌐 语言 · Language",
+      vendorCount: function (n) { return n + " 个商家"; },
+      itemCount: function (n) { return n + " 个货品"; },
+      delMarketAria: "删除市场", delVendorAria: "删除商家",
+      langTitle: "语言 · Language",
+
+      noteQuiet: "太吵听不清时，直接把屏幕给对方看。",
+      noteNoVoice: "这台手机没有中文语音，可能不会发声。<br>请直接把屏幕给对方看。",
+      close: "关闭", again: "🔊 再听一遍",
+      groupPrice: "价格 · 下单", groupItem: "货品", groupContact: "发货 · 联系方式",
+
+      qrWechat: "微信链接", qrLink: "二维码链接", qrRaw: "二维码内容",
+      open: "打开", copy: "复制", qrDelAria: "删除二维码",
+      qrScan: "🔍 在名片上查找二维码（微信等）",
+
+      xlsxHeaders: ["市场", "商家编号", "商家名称 / 联系人", "货币", "名片", "名片二维码 / 微信链接", "货品编号", "货品照片", "价格", "起订量", "备注"],
+      sheetName: "采购清单",
+      xlsxFile: function (stamp) { return "采购清单-" + stamp + ".xlsx"; },
+      backupFile: function (stamp) { return "采购笔记-" + stamp + ".json"; },
+      xlsxFont: "等线",
+
+      noItemsText: "- 暂无货品",
+      itemLineNo: function (n) { return "- 货品 " + n; },
+      priceText: function (v) { return "价格 " + v; },
+      moqText: function (v) { return "起订量 " + v + "个"; },
+      memoText: function (v) { return "  备注: " + v; },
+      cardQrText: function (label, url) { return "名片 " + label + ": " + url; }
     }
   };
 
@@ -922,7 +1003,7 @@
   }
   function detectLang() {
     var nav = (navigator.language || navigator.userLanguage || "ko").toLowerCase();
-    var codes = ["ko", "ja", "vi"];
+    var codes = ["ko", "ja", "vi", "zh"];
     for (var i = 0; i < codes.length; i++) {
       if (nav.indexOf(codes[i]) === 0) return codes[i];
     }
@@ -942,17 +1023,20 @@
   }
 
   var CURRENCIES = {
-    KRW: { label: { ko: "원 (KRW)", en: "Korean won (KRW)", ja: "ウォン (KRW)", vi: "Won Hàn (KRW)" },
-           suffix: { ko: "원", en: "₩", ja: "₩", vi: "₩" } },
-    USD: { label: { ko: "달러 (USD)", en: "US dollar (USD)", ja: "ドル (USD)", vi: "Đô la Mỹ (USD)" },
-           suffix: { ko: "$", en: "$", ja: "$", vi: "$" } },
-    CNY: { label: { ko: "위안 (CNY)", en: "Chinese yuan (CNY)", ja: "元 (CNY)", vi: "Nhân dân tệ (CNY)" },
-           suffix: { ko: "¥", en: "¥", ja: "元", vi: "¥" } },
-    JPY: { label: { ko: "엔 (JPY)", en: "Japanese yen (JPY)", ja: "円 (JPY)", vi: "Yên Nhật (JPY)" },
-           suffix: { ko: "円", en: "¥", ja: "円", vi: "¥" } },
-    VND: { label: { ko: "동 (VND)", en: "Vietnamese dong (VND)", ja: "ドン (VND)", vi: "Đồng (VND)" },
-           suffix: { ko: "₫", en: "₫", ja: "₫", vi: "₫" } }
+    KRW: { label: { ko: "원 (KRW)", en: "Korean won (KRW)", ja: "ウォン (KRW)", vi: "Won Hàn (KRW)", zh: "韩元 (KRW)" },
+           suffix: { ko: "원", en: "₩", ja: "₩", vi: "₩", zh: "₩" } },
+    USD: { label: { ko: "달러 (USD)", en: "US dollar (USD)", ja: "ドル (USD)", vi: "Đô la Mỹ (USD)", zh: "美元 (USD)" },
+           suffix: { ko: "$", en: "$", ja: "$", vi: "$", zh: "$" } },
+    CNY: { label: { ko: "위안 (CNY)", en: "Chinese yuan (CNY)", ja: "元 (CNY)", vi: "Nhân dân tệ (CNY)", zh: "人民币 (CNY)" },
+           suffix: { ko: "¥", en: "¥", ja: "元", vi: "¥", zh: "元" } },
+    JPY: { label: { ko: "엔 (JPY)", en: "Japanese yen (JPY)", ja: "円 (JPY)", vi: "Yên Nhật (JPY)", zh: "日元 (JPY)" },
+           suffix: { ko: "円", en: "¥", ja: "円", vi: "¥", zh: "¥" } },
+    VND: { label: { ko: "동 (VND)", en: "Vietnamese dong (VND)", ja: "ドン (VND)", vi: "Đồng (VND)", zh: "越南盾 (VND)" },
+           suffix: { ko: "₫", en: "₫", ja: "₫", vi: "₫", zh: "₫" } }
   };
+  /* 중국어 화면에서는 라벨과 같은 말이 두 번 나오지 않도록 빼준다 */
+  function zhTag(word) { return lang === "zh" ? "" : ' <b class="zh">' + word + "</b>"; }
+
   function curOf(v) { return CURRENCIES[v && v.currency] || CURRENCIES.KRW; }
   function curLabel(k) { var c = CURRENCIES[k] || CURRENCIES.KRW; return c.label[lang] || c.label.ko; }
   function curSuffix(k) { var c = CURRENCIES[k] || CURRENCIES.KRW; return c.suffix[lang] || c.suffix.ko; }
@@ -1184,12 +1268,16 @@
     var voices = (window.speechSynthesis && speechSynthesis.getVoices) ? (speechSynthesis.getVoices() || []) : [];
     var noVoice = !spoken || (voices.length > 0 && !zhVoice);
 
+    /* 중국어 화면에서는 뜻줄이 중국어 문장과 같아져 생략한다 */
+    var mean = ph[lang] || ph.ko;
+    if (mean === ph.zh) mean = "";
+
     var back = document.createElement("div");
     back.className = "backdrop center";
     back.innerHTML = '<div class="phrase">' +
       '<div class="zh">' + esc(ph.zh) + '</div>' +
       '<div class="pinyin">' + esc(ph.pinyin) + '</div>' +
-      '<div class="ko">' + esc(ph[lang] || ph.ko) + '</div>' +
+      (mean ? '<div class="ko">' + esc(mean) + '</div>' : "") +
       '<div class="note">' + (noVoice ? t("noteNoVoice") : t("noteQuiet")) + '</div>' +
       '<div class="btns">' +
         '<button data-close="1">' + esc(t("close")) + '</button>' +
@@ -1213,8 +1301,10 @@
       g.keys.forEach(function (k) {
         var ph = PHRASES[k];
         if (!ph) return;
+        var sub = ph[lang] || ph.ko;
+        if (sub === ph.zh) sub = ph.pinyin;
         html += '<button class="sheet-item phrase-row" data-phrase="' + esc(k) + '">' +
-          '<span class="grow"><b>' + esc(ph.zh) + '</b><br><span class="sub">' + esc(ph[lang] || ph.ko) + '</span></span>' +
+          '<span class="grow"><b>' + esc(ph.zh) + '</b><br><span class="sub">' + esc(sub) + '</span></span>' +
           '<span class="sub">🔊</span></button>';
       });
     });
@@ -1320,12 +1410,12 @@
             '<button class="del-btn" data-del-item="' + esc(it.id) + '">' + esc(t("delBtn")) + '</button></div>' +
           photoStrip("item", "item:" + it.id, it.photos, t("itemShoot")) +
           '<div class="row field">' +
-            '<div><div class="label-row"><span>' + esc(t("price")) + ' <b class="zh">价格</b></span>' +
+            '<div><div class="label-row"><span>' + esc(t("price")) + zhTag("价格") + '</span>' +
               '<button class="say" data-say="price" aria-label="' + esc(t("sayPriceAria")) + '">🔊</button></div>' +
               '<div class="with-suffix">' +
               '<input class="input" type="text" inputmode="decimal" data-field="price" placeholder="0" value="' + esc(it.price) + '">' +
               '<span class="suffix">' + esc(curSuffix(v.currency)) + '</span></div></div>' +
-            '<div><div class="label-row"><span>' + esc(t("moq")) + ' <b class="zh">起订量</b></span>' +
+            '<div><div class="label-row"><span>' + esc(t("moq")) + zhTag("起订量") + '</span>' +
               '<button class="say" data-say="moq" aria-label="' + esc(t("sayMoqAria")) + '">🔊</button></div>' +
               '<div class="with-suffix">' +
               '<input class="input" type="text" inputmode="numeric" data-field="moq" placeholder="0" value="' + esc(it.moq) + '">' +
@@ -1682,6 +1772,7 @@
   var LANGS = [
     { code: "ko", name: "한국어" },
     { code: "en", name: "English" },
+    { code: "zh", name: "中文" },
     { code: "ja", name: "日本語" },
     { code: "vi", name: "Tiếng Việt" }
   ];
