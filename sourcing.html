@@ -211,6 +211,17 @@
   .sheet-item:active { background: var(--bg); }
   .sheet-item .sub { color: var(--muted); font-size: 12px; }
   .sheet-item.active { background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+  .sheet-row {
+    display: flex; align-items: stretch; gap: 4px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sheet-row:last-of-type { border-bottom: none; }
+  .sheet-row .sheet-item { flex: 1; min-width: 0; border-bottom: none; }
+  .row-del {
+    flex: none; width: 48px; border: none; background: none;
+    font-size: 17px; border-radius: 12px; color: var(--muted);
+  }
+  .row-del:active { background: var(--accent-soft); }
   .sheet-item .grow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   .dialog {
@@ -380,6 +391,8 @@
         if (!Array.isArray(v.items)) v.items = [];
         if (!v.currency) v.currency = "KRW";
         if (typeof v.name !== "string") v.name = "";
+        /* 예전에 만들어진 페이지(물건 1칸)도 기본 2칸이 되도록 빈 칸을 채운다 */
+        while (v.items.length < INITIAL_ITEMS) v.items.push(newItem());
       });
     });
     s.currentMarket = Math.max(0, Math.min(s.markets.length - 1, s.currentMarket || 0));
@@ -813,15 +826,21 @@
   /* ────────── 메뉴 ────────── */
   document.getElementById("menuBtn").addEventListener("click", function () {
     var marketList = state.markets.map(function (m, i) {
-      return '<button class="sheet-item' + (i === state.currentMarket ? " active" : "") + '" data-market="' + i + '">' +
-        '<span class="grow">🏬 ' + esc(marketLabel(m, i)) + '</span>' +
-        '<span class="sub">업체 ' + m.vendors.length + '</span></button>';
+      return '<div class="sheet-row">' +
+        '<button class="sheet-item' + (i === state.currentMarket ? " active" : "") + '" data-market="' + i + '">' +
+          '<span class="grow">🏬 ' + esc(marketLabel(m, i)) + '</span>' +
+          '<span class="sub">업체 ' + m.vendors.length + '</span></button>' +
+        '<button class="row-del" data-del-market="' + i + '" aria-label="시장 삭제">🗑</button>' +
+        '</div>';
     }).join("");
 
     var list = vendors().map(function (v, i) {
-      return '<button class="sheet-item' + (i === state.current ? " active" : "") + '" data-go="' + i + '">' +
-        '<span class="grow">' + (i + 1) + ". " + esc(vendorLabel(v, i)) + '</span>' +
-        '<span class="sub">물건 ' + filledItems(v).length + '</span></button>';
+      return '<div class="sheet-row">' +
+        '<button class="sheet-item' + (i === state.current ? " active" : "") + '" data-go="' + i + '">' +
+          '<span class="grow">' + (i + 1) + ". " + esc(vendorLabel(v, i)) + '</span>' +
+          '<span class="sub">물건 ' + filledItems(v).length + '</span></button>' +
+        '<button class="row-del" data-del-vendor="' + i + '" aria-label="업체 페이지 삭제">🗑</button>' +
+        '</div>';
     }).join("");
 
     var back = document.createElement("div");
@@ -829,21 +848,23 @@
     back.innerHTML = '<div class="sheet">' +
       '<h3>시장 (' + state.markets.length + ')</h3>' + marketList +
       '<button class="sheet-item" data-act="addMarket"><span class="grow">➕ 새 시장 추가</span></button>' +
-      '<h3>' + esc(marketLabel(market(), state.currentMarket)) + ' 의 업체 페이지 (' + vendors().length + ')</h3>' + list +
+      '<h3>' + esc(marketLabel(market(), state.currentMarket)) + '의 업체 페이지 (' + vendors().length + ')</h3>' + list +
       '<h3>관리</h3>' +
       '<button class="sheet-item" data-act="add"><span class="grow">➕ 새 업체 페이지</span></button>' +
       '<button class="sheet-item" data-act="copy"><span class="grow">📋 현재 업체 텍스트 복사</span></button>' +
       '<button class="sheet-item" data-act="excel"><span class="grow">📊 엑셀(XLSX) 다운로드 — 사진 포함</span></button>' +
       '<button class="sheet-item" data-act="backup"><span class="grow">💾 전체 백업 저장 (사진 포함)</span></button>' +
       '<button class="sheet-item" data-act="restore"><span class="grow">📂 백업 불러오기</span></button>' +
-      '<button class="sheet-item" data-act="delVendor"><span class="grow" style="color:var(--accent)">🗑 현재 업체 페이지 삭제</span></button>' +
-      '<button class="sheet-item" data-act="delMarket"><span class="grow" style="color:var(--accent)">🗑 현재 시장 통째로 삭제</span></button>' +
       '</div>';
 
     back.addEventListener("click", function (e) {
       if (e.target === back) { back.remove(); return; }
       var go = e.target.closest("[data-go]");
       if (go) { back.remove(); goTo(parseInt(go.dataset.go, 10)); return; }
+      var delV = e.target.closest("[data-del-vendor]");
+      if (delV) { back.remove(); deleteVendor(parseInt(delV.dataset.delVendor, 10)); return; }
+      var delM = e.target.closest("[data-del-market]");
+      if (delM) { back.remove(); deleteMarket(parseInt(delM.dataset.delMarket, 10)); return; }
       var mk = e.target.closest("[data-market]");
       if (mk) { back.remove(); goToMarket(parseInt(mk.dataset.market, 10)); return; }
       var act = e.target.closest("[data-act]");
@@ -870,29 +891,43 @@
     } else if (act === "restore") {
       document.getElementById("fileRestore").click();
     } else if (act === "delVendor") {
-      confirmDialog("현재 업체 페이지를 통째로 삭제할까요?\n명함과 물건 정보가 모두 지워집니다.").then(function (ok) {
-        if (!ok) return;
-        var v = vendor();
-        dropPhoto(v.card);
-        v.items.forEach(function (it) { dropPhoto(it.photo); });
-        vendors().splice(state.current, 1);
-        if (!vendors().length) vendors().push(newVendor());
-        goTo(Math.min(state.current, vendors().length - 1));
-        toast("업체 페이지를 삭제했습니다");
-      });
+      deleteVendor(state.current);
     } else if (act === "delMarket") {
-      confirmDialog('"' + marketLabel(market(), state.currentMarket) + '" 시장을 통째로 삭제할까요?\n이 시장의 업체 ' + vendors().length + '곳이 모두 지워집니다.').then(function (ok) {
-        if (!ok) return;
-        vendors().forEach(function (v) {
-          dropPhoto(v.card);
-          v.items.forEach(function (it) { dropPhoto(it.photo); });
-        });
-        state.markets.splice(state.currentMarket, 1);
-        if (!state.markets.length) state.markets.push(newMarket());
-        goToMarket(Math.min(state.currentMarket, state.markets.length - 1));
-        toast("시장을 삭제했습니다");
-      });
+      deleteMarket(state.currentMarket);
     }
+  }
+
+  function dropVendorPhotos(v) {
+    dropPhoto(v.card);
+    v.items.forEach(function (it) { dropPhoto(it.photo); });
+  }
+
+  function deleteVendor(index) {
+    var list = vendors();
+    var v = list[index];
+    if (!v) return;
+    confirmDialog('"' + vendorLabel(v, index) + '" 업체 페이지를 삭제할까요?\n명함과 물건 정보가 모두 지워집니다.').then(function (ok) {
+      if (!ok) return;
+      dropVendorPhotos(v);
+      list.splice(index, 1);
+      if (!list.length) list.push(newVendor());
+      goTo(state.current > index ? state.current - 1 : Math.min(state.current, list.length - 1));
+      toast("업체 페이지를 삭제했습니다");
+    });
+  }
+
+  function deleteMarket(index) {
+    var m = state.markets[index];
+    if (!m) return;
+    confirmDialog('"' + marketLabel(m, index) + '" 시장을 통째로 삭제할까요?\n이 시장의 업체 ' + m.vendors.length + '곳이 모두 지워집니다.').then(function (ok) {
+      if (!ok) return;
+      m.vendors.forEach(dropVendorPhotos);
+      state.markets.splice(index, 1);
+      if (!state.markets.length) state.markets.push(newMarket());
+      var next = state.currentMarket > index ? state.currentMarket - 1 : Math.min(state.currentMarket, state.markets.length - 1);
+      goToMarket(next);
+      toast("시장을 삭제했습니다");
+    });
   }
 
   function vendorToText(v, index) {
