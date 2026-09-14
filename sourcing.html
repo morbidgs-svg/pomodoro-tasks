@@ -34,6 +34,7 @@
   /* ── 상단 바 ── */
   .topbar {
     position: sticky; top: 0; z-index: 20;
+    height: 64px;
     display: flex; align-items: center; gap: 8px;
     padding: 12px 14px;
     background: rgba(245,243,239,0.92);
@@ -51,6 +52,33 @@
     min-width: 44px; min-height: 40px;
   }
   .icon-btn:active { background: var(--accent-soft); }
+
+  /* ── 시장(카테고리) 바 ── */
+  .market-bar {
+    position: sticky; top: 64px; z-index: 15;
+    display: flex; align-items: center; gap: 8px;
+    margin: -4px -14px 14px; padding: 10px 14px;
+    background: rgba(245,243,239,0.95);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+  }
+  .market-tag {
+    flex: none; font-size: 11px; font-weight: 800; letter-spacing: 0.06em;
+    color: var(--accent); background: var(--accent-soft);
+    border-radius: 8px; padding: 5px 8px;
+  }
+  .market-input {
+    flex: 1; min-width: 0; border: none; background: none;
+    font-size: 17px; font-weight: 700; padding: 6px 2px; outline: none;
+  }
+  .market-input::placeholder { font-weight: 600; color: var(--muted); }
+  .market-input:focus { border-bottom: 2px solid var(--accent); }
+  .market-more {
+    flex: none; border: 1px solid var(--border); background: var(--card);
+    color: var(--muted); border-radius: 10px;
+    padding: 8px 10px; font-size: 12px; font-weight: 700;
+  }
+  .market-more:active { background: var(--accent-soft); color: var(--accent); }
 
   /* ── 페이지 ── */
   .wrap { max-width: 480px; margin: 0 auto; padding: 16px 14px calc(96px + var(--safe-b)); }
@@ -293,7 +321,7 @@
   }
 
   /* ────────── 상태 ────────── */
-  var state = { vendors: [], current: 0 };
+  var state = { markets: [], currentMarket: 0, current: 0 };
   var urlCache = {};   // photoId -> objectURL
   var saveTimer = null;
 
@@ -316,7 +344,48 @@
   function filledItems(v) {
     return v.items.filter(function (it) { return !isBlankItem(it); });
   }
-  function vendor() { return state.vendors[state.current]; }
+  function newMarket() {
+    return { id: uid(), name: "", vendors: [newVendor()] };
+  }
+  function market() { return state.markets[state.currentMarket]; }
+  function vendors() { return market().vendors; }
+  function vendor() { return vendors()[state.current]; }
+  /* 이름을 안 치면 순서대로 "업체 1, 2, 3…" 으로 불린다 */
+  function vendorLabel(v, i) {
+    var name = v && v.name ? v.name.trim() : "";
+    return name || ("업체 " + (i + 1));
+  }
+  function marketLabel(m, i) {
+    var name = m && m.name ? m.name.trim() : "";
+    return name || ("시장 " + (i + 1));
+  }
+  /* 옛 버전(시장 없이 업체만 있던 저장본)을 시장 1개로 감싸 올린다 */
+  function migrate(saved) {
+    if (!saved) return null;
+    if (Array.isArray(saved.markets) && saved.markets.length) return saved;
+    if (Array.isArray(saved.vendors) && saved.vendors.length) {
+      return {
+        markets: [{ id: uid(), name: "", vendors: saved.vendors }],
+        currentMarket: 0,
+        current: saved.current || 0
+      };
+    }
+    return null;
+  }
+  function normalize(s) {
+    s.markets.forEach(function (m) {
+      if (!Array.isArray(m.vendors) || !m.vendors.length) m.vendors = [newVendor()];
+      if (typeof m.name !== "string") m.name = "";
+      m.vendors.forEach(function (v) {
+        if (!Array.isArray(v.items)) v.items = [];
+        if (!v.currency) v.currency = "KRW";
+        if (typeof v.name !== "string") v.name = "";
+      });
+    });
+    s.currentMarket = Math.max(0, Math.min(s.markets.length - 1, s.currentMarket || 0));
+    s.current = Math.max(0, Math.min(s.markets[s.currentMarket].vendors.length - 1, s.current || 0));
+    return s;
+  }
 
   function save() {
     clearTimeout(saveTimer);
@@ -481,9 +550,10 @@
   }
 
   function render() {
-    if (!state.vendors.length) state.vendors.push(newVendor());
-    if (state.current >= state.vendors.length) state.current = state.vendors.length - 1;
-    if (state.current < 0) state.current = 0;
+    if (!state.markets.length) state.markets.push(newMarket());
+    state.currentMarket = Math.max(0, Math.min(state.markets.length - 1, state.currentMarket));
+    if (!vendors().length) vendors().push(newVendor());
+    state.current = Math.max(0, Math.min(vendors().length - 1, state.current));
 
     var v = vendor();
     var ids = [v.card].concat(v.items.map(function (it) { return it.photo; }));
@@ -491,13 +561,21 @@
     return ensureURLs(ids).then(function () {
       var cur = CURRENCIES[v.currency] || CURRENCIES.KRW;
       var html = "";
+      var m = market();
+
+      /* 시장(카테고리) — 한 번만 입력하면 이 시장의 모든 업체 페이지에 따라다닌다 */
+      html += '<section class="market-bar">' +
+        '<span class="market-tag">시장</span>' +
+        '<input class="market-input" type="text" data-field="market" placeholder="시장 이름 (예: 이우시장)" value="' + esc(m.name) + '">' +
+        '<button class="market-more" data-market-menu="1">시장 ' + (state.currentMarket + 1) + '/' + state.markets.length + ' ▾</button>' +
+        '</section>';
 
       /* 명함 블록 */
       html += '<section class="block vendor-head">' +
         '<div class="block-label"><span>명함 · 업체 정보</span><span class="num">업체 ' + (state.current + 1) + '</span></div>' +
         photoSlot("card", "card", v.card, "명함 사진 촬영") +
         '<div class="field"><label>업체명 / 담당자</label>' +
-          '<input class="input" type="text" data-field="name" placeholder="예) 광저우 ○○무역 · 왕사장" value="' + esc(v.name) + '"></div>' +
+          '<input class="input" type="text" data-field="name" placeholder="' + esc(vendorLabel(null, state.current)) + ' (안 쓰면 자동)" value="' + esc(v.name) + '"></div>' +
         '<div class="field"><label>통화</label>' +
           '<select class="input" data-field="currency">' +
             Object.keys(CURRENCIES).map(function (k) {
@@ -537,12 +615,13 @@
   }
 
   function renderIndicator() {
-    var v = vendor();
-    var name = v && v.name ? v.name : "이름 없는 업체";
+    var m = market();
+    var total = vendors().length;
     document.getElementById("indicator").innerHTML =
-      '<b>' + esc(name) + '</b><br>' + (state.current + 1) + " / " + state.vendors.length + " 페이지";
+      '<b>' + esc(vendorLabel(vendor(), state.current)) + '</b><br>' +
+      esc(marketLabel(m, state.currentMarket)) + " · " + (state.current + 1) + " / " + total + " 페이지";
     document.querySelector('[data-nav="prev"]').disabled = state.current === 0;
-    document.querySelector('[data-nav="next"]').disabled = state.current === state.vendors.length - 1;
+    document.querySelector('[data-nav="next"]').disabled = state.current === total - 1;
   }
 
   /* ────────── 입력 반영 ────────── */
@@ -559,7 +638,10 @@
     if (!field) return;
     var it = itemOf(el);
 
-    if (field === "name") {
+    if (field === "market") {
+      market().name = el.value;
+      renderIndicator();
+    } else if (field === "name") {
       vendor().name = el.value;
       renderIndicator();
     } else if (field === "price" || field === "moq") {
@@ -640,6 +722,10 @@
 
   /* ────────── 페이지 클릭 동작 ────────── */
   page.addEventListener("click", function (e) {
+    if (e.target.closest("[data-market-menu]")) {
+      document.getElementById("menuBtn").click();
+      return;
+    }
     var shoot = e.target.closest("[data-shoot]");
     if (shoot) { pickPhoto(shoot.dataset.shoot); return; }
 
@@ -699,9 +785,21 @@
 
   /* ────────── 페이지(업체) 이동 ────────── */
   function goTo(index) {
-    state.current = Math.max(0, Math.min(state.vendors.length - 1, index));
+    state.current = Math.max(0, Math.min(vendors().length - 1, index));
     save();
     render().then(function () { window.scrollTo(0, 0); });
+  }
+  function goToMarket(index, vendorIndex) {
+    state.currentMarket = Math.max(0, Math.min(state.markets.length - 1, index));
+    state.current = 0;
+    if (typeof vendorIndex === "number") state.current = Math.max(0, Math.min(vendors().length - 1, vendorIndex));
+    save();
+    render().then(function () { window.scrollTo(0, 0); });
+  }
+  function addVendor() {
+    vendors().push(newVendor());
+    goTo(vendors().length - 1);
+    toast("새 업체 페이지가 추가되었습니다");
   }
 
   document.querySelector(".bottombar").addEventListener("click", function (e) {
@@ -710,24 +808,28 @@
     goTo(state.current + (btn.dataset.nav === "next" ? 1 : -1));
   });
 
-  document.getElementById("addVendorBtn").addEventListener("click", function () {
-    state.vendors.push(newVendor());
-    goTo(state.vendors.length - 1);
-    toast("새 업체 페이지가 추가되었습니다");
-  });
+  document.getElementById("addVendorBtn").addEventListener("click", addVendor);
 
   /* ────────── 메뉴 ────────── */
   document.getElementById("menuBtn").addEventListener("click", function () {
-    var list = state.vendors.map(function (v, i) {
+    var marketList = state.markets.map(function (m, i) {
+      return '<button class="sheet-item' + (i === state.currentMarket ? " active" : "") + '" data-market="' + i + '">' +
+        '<span class="grow">🏬 ' + esc(marketLabel(m, i)) + '</span>' +
+        '<span class="sub">업체 ' + m.vendors.length + '</span></button>';
+    }).join("");
+
+    var list = vendors().map(function (v, i) {
       return '<button class="sheet-item' + (i === state.current ? " active" : "") + '" data-go="' + i + '">' +
-        '<span class="grow">' + (i + 1) + ". " + esc(v.name || "이름 없는 업체") + '</span>' +
-        '<span class="sub">물건 ' + v.items.length + '</span></button>';
+        '<span class="grow">' + (i + 1) + ". " + esc(vendorLabel(v, i)) + '</span>' +
+        '<span class="sub">물건 ' + filledItems(v).length + '</span></button>';
     }).join("");
 
     var back = document.createElement("div");
     back.className = "backdrop";
     back.innerHTML = '<div class="sheet">' +
-      '<h3>업체 페이지 (' + state.vendors.length + ')</h3>' + list +
+      '<h3>시장 (' + state.markets.length + ')</h3>' + marketList +
+      '<button class="sheet-item" data-act="addMarket"><span class="grow">➕ 새 시장 추가</span></button>' +
+      '<h3>' + esc(marketLabel(market(), state.currentMarket)) + ' 의 업체 페이지 (' + vendors().length + ')</h3>' + list +
       '<h3>관리</h3>' +
       '<button class="sheet-item" data-act="add"><span class="grow">➕ 새 업체 페이지</span></button>' +
       '<button class="sheet-item" data-act="copy"><span class="grow">📋 현재 업체 텍스트 복사</span></button>' +
@@ -735,12 +837,15 @@
       '<button class="sheet-item" data-act="backup"><span class="grow">💾 전체 백업 저장 (사진 포함)</span></button>' +
       '<button class="sheet-item" data-act="restore"><span class="grow">📂 백업 불러오기</span></button>' +
       '<button class="sheet-item" data-act="delVendor"><span class="grow" style="color:var(--accent)">🗑 현재 업체 페이지 삭제</span></button>' +
+      '<button class="sheet-item" data-act="delMarket"><span class="grow" style="color:var(--accent)">🗑 현재 시장 통째로 삭제</span></button>' +
       '</div>';
 
     back.addEventListener("click", function (e) {
       if (e.target === back) { back.remove(); return; }
       var go = e.target.closest("[data-go]");
       if (go) { back.remove(); goTo(parseInt(go.dataset.go, 10)); return; }
+      var mk = e.target.closest("[data-market]");
+      if (mk) { back.remove(); goToMarket(parseInt(mk.dataset.market, 10)); return; }
       var act = e.target.closest("[data-act]");
       if (!act) return;
       back.remove();
@@ -751,9 +856,11 @@
 
   function runAction(act) {
     if (act === "add") {
-      state.vendors.push(newVendor());
-      goTo(state.vendors.length - 1);
-      toast("새 업체 페이지가 추가되었습니다");
+      addVendor();
+    } else if (act === "addMarket") {
+      state.markets.push(newMarket());
+      goToMarket(state.markets.length - 1);
+      toast("새 시장이 추가되었습니다");
     } else if (act === "copy") {
       copyText();
     } else if (act === "excel") {
@@ -768,17 +875,29 @@
         var v = vendor();
         dropPhoto(v.card);
         v.items.forEach(function (it) { dropPhoto(it.photo); });
-        state.vendors.splice(state.current, 1);
-        if (!state.vendors.length) state.vendors.push(newVendor());
-        goTo(Math.min(state.current, state.vendors.length - 1));
+        vendors().splice(state.current, 1);
+        if (!vendors().length) vendors().push(newVendor());
+        goTo(Math.min(state.current, vendors().length - 1));
         toast("업체 페이지를 삭제했습니다");
+      });
+    } else if (act === "delMarket") {
+      confirmDialog('"' + marketLabel(market(), state.currentMarket) + '" 시장을 통째로 삭제할까요?\n이 시장의 업체 ' + vendors().length + '곳이 모두 지워집니다.').then(function (ok) {
+        if (!ok) return;
+        vendors().forEach(function (v) {
+          dropPhoto(v.card);
+          v.items.forEach(function (it) { dropPhoto(it.photo); });
+        });
+        state.markets.splice(state.currentMarket, 1);
+        if (!state.markets.length) state.markets.push(newMarket());
+        goToMarket(Math.min(state.currentMarket, state.markets.length - 1));
+        toast("시장을 삭제했습니다");
       });
     }
   }
 
   function vendorToText(v, index) {
     var cur = CURRENCIES[v.currency] || CURRENCIES.KRW;
-    var lines = ["[업체 " + (index + 1) + "] " + (v.name || "이름 없는 업체")];
+    var lines = ["[" + marketLabel(market(), state.currentMarket) + "] " + vendorLabel(v, index)];
     var items = filledItems(v);
     if (!items.length) lines.push("- 등록된 물건 없음");
     items.forEach(function (it, i) {
@@ -814,9 +933,11 @@
   function backup() {
     toast("백업 파일을 만드는 중…");
     var ids = [];
-    state.vendors.forEach(function (v) {
-      if (v.card) ids.push(v.card);
-      v.items.forEach(function (it) { if (it.photo) ids.push(it.photo); });
+    state.markets.forEach(function (m) {
+      m.vendors.forEach(function (v) {
+        if (v.card) ids.push(v.card);
+        v.items.forEach(function (it) { if (it.photo) ids.push(it.photo); });
+      });
     });
     Promise.all(ids.map(function (id) {
       return dbGet("images", id).then(function (blob) {
@@ -844,14 +965,14 @@
       reader.onload = function () {
         var payload;
         try { payload = JSON.parse(reader.result); } catch (e) { toast("백업 파일을 읽을 수 없습니다"); return; }
-        if (!payload || !payload.state || !Array.isArray(payload.state.vendors)) { toast("형식이 맞지 않는 파일입니다"); return; }
+        var restored = payload && payload.state ? migrate(payload.state) : null;
+        if (!restored) { toast("형식이 맞지 않는 파일입니다"); return; }
         Object.keys(urlCache).forEach(function (id) { URL.revokeObjectURL(urlCache[id]); delete urlCache[id]; });
         var images = payload.images || {};
         Promise.all(Object.keys(images).map(function (id) {
           return dbPut("images", id, dataURLtoBlob(images[id]));
         })).then(function () {
-          state = payload.state;
-          state.current = Math.min(state.current || 0, state.vendors.length - 1);
+          state = normalize(restored);
           save();
           return render();
         }).then(function () { toast("백업을 불러왔습니다"); window.scrollTo(0, 0); })
@@ -1005,8 +1126,9 @@
     return cellStr(col, row, text, textStyle);
   }
 
-  var XLSX_HEADERS = ["업체 번호", "업체명 / 담당자", "통화", "명함", "물건 번호", "물건 사진", "가격", "최소수량", "메모"];
-  var XLSX_WIDTHS = [9, 24, 12, 22, 9, 22, 14, 12, 46];
+  var XLSX_HEADERS = ["시장", "업체 번호", "업체명 / 담당자", "통화", "명함", "물건 번호", "물건 사진", "가격", "최소수량", "메모"];
+  var XLSX_WIDTHS = [18, 9, 24, 12, 22, 9, 22, 14, 12, 46];
+  var COL_CARD = 4, COL_PHOTO = 6;      // 명함 / 물건 사진이 들어갈 열 (0-based)
 
   function stylesXML() {
     return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
@@ -1056,15 +1178,16 @@
     rows.forEach(function (row, i) {
       var r = i + 2;
       x += '<row r="' + r + '" ht="' + rowHeight + '" customHeight="1">' +
-        cellNum(0, r, row.vendorNo, 2) +
-        cellStr(1, r, row.vendorName, 4) +
-        cellStr(2, r, row.currency, 2) +
-        cellStr(3, r, "", 2) +
-        (row.itemNo ? cellNum(4, r, row.itemNo, 2) : cellStr(4, r, "", 2)) +
-        cellStr(5, r, "", 2) +
-        numericCell(6, r, row.price, 3, 2) +
-        numericCell(7, r, row.moq, 3, 2) +
-        cellStr(8, r, row.memo, 4) +
+        cellStr(0, r, row.market, 4) +
+        cellNum(1, r, row.vendorNo, 2) +
+        cellStr(2, r, row.vendorName, 4) +
+        cellStr(3, r, row.currency, 2) +
+        cellStr(4, r, "", 2) +
+        (row.itemNo ? cellNum(5, r, row.itemNo, 2) : cellStr(5, r, "", 2)) +
+        cellStr(6, r, "", 2) +
+        numericCell(7, r, row.price, 3, 2) +
+        numericCell(8, r, row.moq, 3, 2) +
+        cellStr(9, r, row.memo, 4) +
         '</row>';
     });
 
@@ -1098,23 +1221,26 @@
 
   function exportExcel() {
     var rows = [], picJobs = [];
-    state.vendors.forEach(function (v, vi) {
-      var cur = CURRENCIES[v.currency] || CURRENCIES.KRW;
-      var items = filledItems(v);
-      if (!items.length) items = [null];        // 물건이 하나도 없으면 업체 줄만 남김
-      items.forEach(function (it, ii) {
-        rows.push({
-          vendorNo: vi + 1,
-          vendorName: v.name || "이름 없는 업체",
-          currency: cur.label,
-          itemNo: it ? ii + 1 : 0,
-          price: it ? it.price : "",
-          moq: it ? it.moq : "",
-          memo: it ? it.memo : ""
+    state.markets.forEach(function (m, mi) {
+      m.vendors.forEach(function (v, vi) {
+        var cur = CURRENCIES[v.currency] || CURRENCIES.KRW;
+        var items = filledItems(v);
+        if (!items.length) items = [null];      // 물건이 하나도 없으면 업체 줄만 남김
+        items.forEach(function (it, ii) {
+          rows.push({
+            market: marketLabel(m, mi),
+            vendorNo: vi + 1,
+            vendorName: vendorLabel(v, vi),
+            currency: cur.label,
+            itemNo: it ? ii + 1 : 0,
+            price: it ? it.price : "",
+            moq: it ? it.moq : "",
+            memo: it ? it.memo : ""
+          });
+          var rowIndex = rows.length;                // 헤더가 1행이므로 0-based 행 = rows.length
+          if (ii === 0 && v.card) picJobs.push({ row: rowIndex, col: COL_CARD, id: v.card });
+          if (it && it.photo) picJobs.push({ row: rowIndex, col: COL_PHOTO, id: it.photo });
         });
-        var rowIndex = rows.length;                  // 헤더가 1행이므로 0-based 행 = rows.length
-        if (ii === 0 && v.card) picJobs.push({ row: rowIndex, col: 3, id: v.card });
-        if (it && it.photo) picJobs.push({ row: rowIndex, col: 5, id: it.photo });
       });
     });
 
@@ -1206,18 +1332,11 @@
 
   /* ────────── 시작 ────────── */
   dbGet("kv", "state").then(function (saved) {
-    if (saved && Array.isArray(saved.vendors) && saved.vendors.length) {
-      state = saved;
-      state.vendors.forEach(function (v) {
-        if (!Array.isArray(v.items)) v.items = [];
-        if (!v.currency) v.currency = "KRW";
-      });
-    } else {
-      state.vendors = [newVendor()];
-    }
+    var restored = migrate(saved);
+    state = restored ? normalize(restored) : { markets: [newMarket()], currentMarket: 0, current: 0 };
     return render();
   })["catch"](function () {
-    state.vendors = [newVendor()];
+    state = { markets: [newMarket()], currentMarket: 0, current: 0 };
     render();
     toast("저장 공간을 쓸 수 없어 임시로 동작합니다");
   });
