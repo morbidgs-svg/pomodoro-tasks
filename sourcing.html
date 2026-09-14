@@ -105,9 +105,18 @@
   }
   .del-btn:active { background: var(--bg); }
 
-  /* ── 사진 슬롯 ── */
-  .slot {
-    position: relative; width: 100%;
+  /* ── 사진 띠 (옆으로 밀어서 여러 장) ── */
+  .strip {
+    display: flex; gap: 8px;
+    overflow-x: auto; overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+  .strip::-webkit-scrollbar { display: none; }
+  .shot {
+    position: relative; flex: 0 0 86%; scroll-snap-align: center;
     border: 2px dashed var(--border); border-radius: 14px;
     background: #fbfaf8;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -115,18 +124,23 @@
     aspect-ratio: 16 / 10;
     overflow: hidden;
   }
-  .slot.item { aspect-ratio: 4 / 3; }
-  .slot .cam { font-size: 30px; }
-  .slot .hint { font-size: 13px; font-weight: 600; }
-  .slot.filled { border-style: solid; border-color: var(--border); background: #000; }
-  .slot img { width: 100%; height: 100%; object-fit: contain; display: block; }
-  .slot .tools {
-    position: absolute; right: 8px; bottom: 8px; display: flex; gap: 6px;
-  }
-  .slot .tools button {
-    border: none; border-radius: 10px;
+  .strip.empty .shot { flex: 0 0 100%; }
+  .strip.item .shot { aspect-ratio: 4 / 3; }
+  .shot .cam { font-size: 30px; }
+  .shot .hint { font-size: 13px; font-weight: 600; }
+  .shot.filled { border-style: solid; border-color: var(--border); background: #000; }
+  .shot img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .shot-no {
+    position: absolute; left: 8px; bottom: 8px;
     background: rgba(0,0,0,0.55); color: #fff;
-    font-size: 12px; font-weight: 600; padding: 7px 10px;
+    font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 9px;
+    backdrop-filter: blur(4px);
+  }
+  .shot-del {
+    position: absolute; right: 8px; top: 8px;
+    border: none; border-radius: 50%;
+    background: rgba(0,0,0,0.55); color: #fff;
+    width: 30px; height: 30px; font-size: 13px; line-height: 1;
     backdrop-filter: blur(4px);
   }
 
@@ -405,21 +419,21 @@
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   }
   function newItem() {
-    return { id: uid(), photo: null, price: "", moq: "", memo: "" };
+    return { id: uid(), photos: [], price: "", moq: "", memo: "" };
   }
   var INITIAL_ITEMS = 2;              // 새 업체 페이지에 기본으로 열어두는 물건 칸 수
   function newVendor(currency) {
     var items = [];
     for (var i = 0; i < INITIAL_ITEMS; i++) items.push(newItem());
     return {
-      id: uid(), name: "", card: null,
+      id: uid(), name: "", cards: [],
       currency: currency || state.lastCurrency || "KRW",   /* 마지막에 쓰던 통화 이어받기 */
       items: items
     };
   }
   /* 사진·가격·수량·메모가 모두 비어 있으면 내보낼 때 제외 */
   function isBlankItem(it) {
-    return !it.photo && !String(it.price).trim() && !String(it.moq).trim() && !String(it.memo).trim();
+    return !(it.photos && it.photos.length) && !String(it.price).trim() && !String(it.moq).trim() && !String(it.memo).trim();
   }
   function filledItems(v) {
     return v.items.filter(function (it) { return !isBlankItem(it); });
@@ -460,6 +474,13 @@
         if (!Array.isArray(v.items)) v.items = [];
         if (!v.currency) v.currency = "KRW";
         if (typeof v.name !== "string") v.name = "";
+        /* 예전 형식: 명함/물건 사진이 한 장씩이던 것을 여러 장 배열로 */
+        if (!Array.isArray(v.cards)) v.cards = v.card ? [v.card] : [];
+        delete v.card;
+        v.items.forEach(function (it) {
+          if (!Array.isArray(it.photos)) it.photos = it.photo ? [it.photo] : [];
+          delete it.photo;
+        });
         /* 예전에 만들어진 페이지(물건 1칸)도 기본 2칸이 되도록 빈 칸을 채운다 */
         while (v.items.length < INITIAL_ITEMS) v.items.push(newItem());
       });
@@ -673,14 +694,36 @@
   }
 
   /* 명함 사진에서 QR을 찾아 업체에 저장 */
+  /* 명함 사진 한 장에서만 QR 찾기 (새로 찍었을 때) */
+  function scanCardPhoto(photoId) {
+    return dbGet("images", photoId).then(function (blob) {
+      return blob ? scanQR(blob) : null;
+    }).then(function (text) {
+      if (!text) return;
+      var v = vendor();
+      if (v.cardQr === text) return;
+      v.cardQr = text;
+      save();
+      return render().then(function () { toast(qrLabel(text) + "를 찾았습니다"); });
+    })["catch"](function () {});
+  }
+
+  /* 명함 사진 전체를 훑어 QR 찾기 (버튼으로 직접 눌렀을 때) */
   function scanCardQR(showResult) {
     var v = vendor();
-    if (!v.card) { if (showResult) toast("먼저 명함 사진을 넣어주세요"); return Promise.resolve(); }
+    if (!v.cards.length) { if (showResult) toast("먼저 명함 사진을 넣어주세요"); return Promise.resolve(); }
     if (showResult) toast("명함에서 QR 찾는 중…");
-    return dbGet("images", v.card).then(function (blob) {
-      if (!blob) return null;
-      return scanQR(blob);
-    }).then(function (text) {
+    var found = null;
+    var chain = v.cards.reduce(function (prev, id) {
+      return prev.then(function () {
+        if (found) return null;
+        return dbGet("images", id).then(function (blob) {
+          return blob ? scanQR(blob) : null;
+        }).then(function (text) { if (text) found = text; });
+      });
+    }, Promise.resolve());
+
+    return chain.then(function () { return found; }).then(function (text) {
       if (!text) {
         if (showResult) toast("QR을 찾지 못했습니다");
         return;
@@ -830,18 +873,23 @@
   /* ────────── 렌더 ────────── */
   var page = document.getElementById("page");
 
-  function photoSlot(kind, target, photoId, hint) {
-    var url = photoId && urlCache[photoId];
-    if (url) {
-      return '<div class="slot ' + kind + ' filled" data-view="' + esc(photoId) + '">' +
-        '<img src="' + esc(url) + '" alt="">' +
-        '<div class="tools">' +
-          '<button data-shoot="' + esc(target) + '">다시 촬영</button>' +
-          '<button data-clear="' + esc(target) + '">삭제</button>' +
-        '</div></div>';
-    }
-    return '<div class="slot ' + kind + '" data-shoot="' + esc(target) + '">' +
-      '<div class="cam">📷</div><div class="hint">' + esc(hint) + '</div></div>';
+  /* 사진 여러 장을 옆으로 밀어 넘기는 띠 (맨 끝은 추가 타일) */
+  function photoStrip(kind, target, ids, hint) {
+    ids = ids || [];
+    var tiles = ids.map(function (id, i) {
+      var url = urlCache[id];
+      return '<div class="shot filled" data-view="' + esc(id) + '">' +
+        (url ? '<img src="' + esc(url) + '" alt="">' : "") +
+        '<span class="shot-no">' + (i + 1) + ' / ' + ids.length + '</span>' +
+        '<button class="shot-del" data-del-photo="' + esc(target + ":" + i) + '" aria-label="이 사진 삭제">✕</button>' +
+        '</div>';
+    }).join("");
+
+    tiles += '<div class="shot add" data-shoot="' + esc(target) + '">' +
+      '<div class="cam">📷</div>' +
+      '<div class="hint">' + (ids.length ? "사진 추가" : esc(hint)) + '</div></div>';
+
+    return '<div class="strip ' + kind + (ids.length ? "" : " empty") + '">' + tiles + '</div>';
   }
 
   /* 명함 아래 QR 링크 줄 */
@@ -857,7 +905,7 @@
           '<button class="qr-btn" data-qr="clear" aria-label="QR 삭제">✕</button>' +
         '</div></div>';
     }
-    if (!v.card) return "";
+    if (!v.cards.length) return "";
     return '<div class="qr-row"><button class="qr-btn wide" data-qr="scan">🔍 명함에서 QR 찾기 (위챗 등)</button></div>';
   }
 
@@ -868,7 +916,8 @@
     state.current = Math.max(0, Math.min(vendors().length - 1, state.current));
 
     var v = vendor();
-    var ids = [v.card].concat(v.items.map(function (it) { return it.photo; }));
+    var ids = v.cards.slice();
+    v.items.forEach(function (it) { ids = ids.concat(it.photos); });
 
     return ensureURLs(ids).then(function () {
       var cur = CURRENCIES[v.currency] || CURRENCIES.KRW;
@@ -888,7 +937,7 @@
           '<span class="label-say">명함 · 업체 정보' +
             '<button class="say" data-say="card" aria-label="중국어로 명함 요청하기">🔊</button></span>' +
           '<span class="num">업체 ' + (state.current + 1) + '</span></div>' +
-        photoSlot("card", "card", v.card, "명함 사진 촬영") +
+        photoStrip("card", "card", v.cards, "명함 사진 촬영") +
         cardQrRow(v) +
         '<div class="field"><label>업체명 / 담당자</label>' +
           '<input class="input" type="text" data-field="name" placeholder="' + esc(vendorLabel(null, state.current)) + ' (안 쓰면 자동)" value="' + esc(v.name) + '"></div>' +
@@ -905,7 +954,7 @@
         html += '<section class="block" data-item="' + esc(it.id) + '">' +
           '<div class="block-label"><span class="num">물건 ' + (i + 1) + '</span>' +
             '<button class="del-btn" data-del-item="' + esc(it.id) + '">✕ 삭제</button></div>' +
-          photoSlot("item", "item:" + it.id, it.photo, "물건 사진 촬영") +
+          photoStrip("item", "item:" + it.id, it.photos, "물건 사진 촬영") +
           '<div class="row field">' +
             '<div><div class="label-row"><span>가격 <b class="zh">价格</b></span>' +
               '<button class="say" data-say="price" aria-label="중국어로 가격 물어보기">🔊</button></div>' +
@@ -1018,26 +1067,23 @@
     if (!file || !pendingTarget) { pendingTarget = null; return; }
     var target = pendingTarget;
     pendingTarget = null;
-    var autoScan = false;
+    var autoScan = null;
     toast("사진 처리 중…");
     storePhoto(file).then(function (id) {
       var v = vendor();
       if (target === "card") {
-        dropPhoto(v.card);
-        v.card = id;
-        delete v.cardQr;
-        autoScan = true;
+        v.cards.push(id);
+        autoScan = id;                       /* 새로 찍은 명함에서 QR 찾기 */
       } else {
         var itemId = target.slice(5);
         var it = v.items.filter(function (x) { return x.id === itemId; })[0];
         if (!it) { dropPhoto(id); return; }
-        dropPhoto(it.photo);
-        it.photo = id;
+        it.photos.push(id);
       }
       save();
       return render().then(function () {
         toast("사진이 저장되었습니다");
-        if (autoScan) scanCardQR(false);      /* 명함이면 QR도 조용히 찾아본다 */
+        if (autoScan) scanCardPhoto(autoScan);   /* 명함이면 QR도 조용히 찾아본다 */
       });
     })["catch"](function () {
       toast("사진을 넣지 못했습니다");
@@ -1075,17 +1121,20 @@
     var shoot = e.target.closest("[data-shoot]");
     if (shoot) { pickPhoto(shoot.dataset.shoot); return; }
 
-    var clear = e.target.closest("[data-clear]");
-    if (clear) {
-      var target = clear.dataset.clear;
+    var del = e.target.closest("[data-del-photo]");
+    if (del) {
+      var parts = del.dataset.delPhoto.split(":");      /* card:2 또는 item:<id>:1 */
+      var index = parseInt(parts[parts.length - 1], 10);
+      var isCard = parts[0] === "card";
       confirmDialog("이 사진을 삭제할까요?").then(function (ok) {
         if (!ok) return;
         var v = vendor();
-        if (target === "card") { dropPhoto(v.card); v.card = null; }
-        else {
-          var it = v.items.filter(function (x) { return x.id === target.slice(5); })[0];
-          if (it) { dropPhoto(it.photo); it.photo = null; }
-        }
+        var list = isCard ? v.cards
+          : (v.items.filter(function (x) { return x.id === parts[1]; })[0] || {}).photos;
+        if (!list || !list[index]) return;
+        dropPhoto(list[index]);
+        list.splice(index, 1);
+        if (isCard && !list.length) delete v.cardQr;
         save(); render();
       });
       return;
@@ -1101,7 +1150,7 @@
         if (!ok) return;
         var v = vendor();
         var it = v.items.filter(function (x) { return x.id === id; })[0];
-        if (it) dropPhoto(it.photo);
+        if (it) it.photos.forEach(dropPhoto);
         v.items = v.items.filter(function (x) { return x.id !== id; });
         save(); render();
       });
@@ -1231,8 +1280,8 @@
   }
 
   function dropVendorPhotos(v) {
-    dropPhoto(v.card);
-    v.items.forEach(function (it) { dropPhoto(it.photo); });
+    v.cards.forEach(dropPhoto);
+    v.items.forEach(function (it) { it.photos.forEach(dropPhoto); });
   }
 
   function deleteVendor(index) {
@@ -1304,8 +1353,8 @@
     var ids = [];
     state.markets.forEach(function (m) {
       m.vendors.forEach(function (v) {
-        if (v.card) ids.push(v.card);
-        v.items.forEach(function (it) { if (it.photo) ids.push(it.photo); });
+        ids = ids.concat(v.cards);
+        v.items.forEach(function (it) { ids = ids.concat(it.photos); });
       });
     });
     Promise.all(ids.map(function (id) {
@@ -1353,7 +1402,8 @@
 
   /* ────────── 엑셀(XLSX) 내보내기 ────────── */
   var EMU_PER_PX = 9525;
-  var PIC_BOX = { w: 142, h: 96 };      // 시트에 들어갈 사진 최대 크기(px)
+  var PIC_BOX = { w: 226, h: 96 };      // 한 칸에 들어갈 사진 영역(px)
+  var PIC_MAX = 3;                      // 한 칸에 넣을 사진 최대 장수
   var PIC_ROW_HEIGHT = 78;              // 사진이 있을 때 행 높이(pt)
 
   var crcTable = (function () {
@@ -1496,7 +1546,7 @@
   }
 
   var XLSX_HEADERS = ["시장", "업체 번호", "업체명 / 담당자", "통화", "명함", "명함 QR / 위챗 링크", "물건 번호", "물건 사진", "가격", "최소수량", "메모"];
-  var XLSX_WIDTHS = [18, 9, 24, 12, 22, 38, 9, 22, 14, 12, 46];
+  var XLSX_WIDTHS = [18, 9, 24, 12, 34, 38, 9, 34, 14, 12, 46];
   var COL_CARD = 4, COL_PHOTO = 7;      // 명함 / 물건 사진이 들어갈 열 (0-based)
 
   function stylesXML() {
@@ -1572,11 +1622,15 @@
       ' xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"' +
       ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">';
     pics.forEach(function (p, i) {
-      var scale = Math.min(PIC_BOX.w / p.thumb.w, PIC_BOX.h / p.thumb.h, 1);
+      /* 같은 칸에 여러 장이면 가로로 나눠 배치 */
+      var slots = Math.min(p.of || 1, PIC_MAX);
+      var boxW = (PIC_BOX.w / slots) - (slots > 1 ? 6 : 0);
+      var scale = Math.min(boxW / p.thumb.w, PIC_BOX.h / p.thumb.h, 1);
       var cx = Math.round(p.thumb.w * scale * EMU_PER_PX);
       var cy = Math.round(p.thumb.h * scale * EMU_PER_PX);
+      var offX = Math.round((38100 + (p.slot || 0) * (boxW + 6) * EMU_PER_PX));
       x += '<xdr:oneCellAnchor>' +
-        '<xdr:from><xdr:col>' + p.col + '</xdr:col><xdr:colOff>38100</xdr:colOff>' +
+        '<xdr:from><xdr:col>' + p.col + '</xdr:col><xdr:colOff>' + offX + '</xdr:colOff>' +
         '<xdr:row>' + p.row + '</xdr:row><xdr:rowOff>38100</xdr:rowOff></xdr:from>' +
         '<xdr:ext cx="' + cx + '" cy="' + cy + '"/>' +
         '<xdr:pic><xdr:nvPicPr><xdr:cNvPr id="' + (i + 2) + '" name="사진 ' + (i + 1) + '"/>' +
@@ -1609,8 +1663,13 @@
             memo: it ? it.memo : ""
           });
           var rowIndex = rows.length;                // 헤더가 1행이므로 0-based 행 = rows.length
-          if (ii === 0 && v.card) picJobs.push({ row: rowIndex, col: COL_CARD, id: v.card });
-          if (it && it.photo) picJobs.push({ row: rowIndex, col: COL_PHOTO, id: it.photo });
+          var addPics = function (list, col) {
+            (list || []).slice(0, PIC_MAX).forEach(function (id, n) {
+              picJobs.push({ row: rowIndex, col: col, id: id, slot: n, of: Math.min(list.length, PIC_MAX) });
+            });
+          };
+          if (ii === 0) addPics(v.cards, COL_CARD);
+          if (it) addPics(it.photos, COL_PHOTO);
         });
       });
     });
@@ -1705,6 +1764,7 @@
   dbGet("kv", "state").then(function (saved) {
     var restored = migrate(saved);
     state = restored ? normalize(restored) : { markets: [newMarket()], currentMarket: 0, current: 0 };
+    if (saved) save();        /* 옛 형식을 읽었으면 새 형식으로 다시 저장해둔다 */
     return render();
   }).then(function () {
     var preload = function () { ensureJsQR(); };
