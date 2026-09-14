@@ -249,6 +249,9 @@
   }
   .sheet-row:last-of-type { border-bottom: none; }
   .sheet-row .sheet-item { flex: 1; min-width: 0; border-bottom: none; }
+  .phrase-row { align-items: center; }
+  .phrase-row b { font-size: 16px; font-weight: 700; line-height: 1.5; }
+  .phrase-row .sub { display: block; font-size: 12px; }
   .row-del {
     flex: none; width: 48px; border: none; background: none;
     font-size: 17px; border-radius: 12px; color: var(--muted);
@@ -285,6 +288,7 @@
 
 <header class="topbar">
   <button class="icon-btn" id="menuBtn" aria-label="메뉴">☰</button>
+  <button class="icon-btn" id="phraseBtn" aria-label="중국어로 물어보기">💬</button>
   <div class="title">아이템 소싱 노트</div>
   <button class="icon-btn" id="addVendorBtn">+ 업체</button>
 </header>
@@ -579,17 +583,25 @@
 
   /* ────────── 중국어로 물어보기 ────────── */
   var PHRASES = {
-    price: {
-      zh: "这个多少钱？",
-      pinyin: "zhè ge duō shao qián?",
-      ko: "이거 얼마예요?"
-    },
-    moq: {
-      zh: "最少订多少个？",
-      pinyin: "zuì shǎo dìng duō shao ge?",
-      ko: "최소 몇 개부터 주문할 수 있어요?"
-    }
+    price:        { zh: "这个多少钱？",        pinyin: "zhè ge duō shao qián?",              ko: "이거 얼마예요?" },
+    moq:          { zh: "最少订多少个？",      pinyin: "zuì shǎo dìng duō shao ge?",         ko: "최소 몇 개부터 주문할 수 있어요?" },
+    cheaper:      { zh: "能便宜点吗？",        pinyin: "néng pián yi diǎn ma?",              ko: "좀 깎아줄 수 있어요?" },
+    tooExpensive: { zh: "太贵了，再便宜一点。", pinyin: "tài guì le, zài pián yi yī diǎn.",   ko: "너무 비싸요, 조금만 더 싸게요." },
+    bulkPrice:    { zh: "多订能便宜吗？",      pinyin: "duō dìng néng pián yi ma?",          ko: "많이 주문하면 더 싸지나요?" },
+    sample:       { zh: "有样品吗？",          pinyin: "yǒu yàng pǐn ma?",                   ko: "샘플 있어요?" },
+    otherColor:   { zh: "有没有别的颜色？",    pinyin: "yǒu méi yǒu bié de yán sè?",         ko: "다른 색 있어요?" },
+    photoOk:      { zh: "可以拍照吗？",        pinyin: "kě yǐ pāi zhào ma?",                 ko: "사진 찍어도 돼요?" },
+    mixOrder:     { zh: "可以混批吗？",        pinyin: "kě yǐ hùn pī ma?",                   ko: "여러 종류 섞어서 주문돼요?" },
+    shipTime:     { zh: "多久能发货？",        pinyin: "duō jiǔ néng fā huò?",               ko: "발송까지 얼마나 걸려요?" },
+    shipKorea:    { zh: "可以发货到韩国吗？",  pinyin: "kě yǐ fā huò dào hán guó ma?",       ko: "한국으로 보낼 수 있어요?" },
+    wechat:       { zh: "加个微信可以吗？",    pinyin: "jiā ge wēi xìn kě yǐ ma?",           ko: "위챗 추가해도 될까요?" }
   };
+
+  var PHRASE_GROUPS = [
+    { title: "가격 · 주문", keys: ["price", "moq", "cheaper", "tooExpensive", "bulkPrice"] },
+    { title: "물건", keys: ["sample", "otherColor", "photoOk", "mixOrder"] },
+    { title: "배송 · 연락처", keys: ["shipTime", "shipKorea", "wechat"] }
+  ];
 
   var zhVoice = null;
   function pickZhVoice() {
@@ -661,6 +673,33 @@
     });
     document.body.appendChild(back);
   }
+
+  function openPhraseList() {
+    var html = '<div class="sheet">';
+    PHRASE_GROUPS.forEach(function (g) {
+      html += '<h3>' + esc(g.title) + '</h3>';
+      g.keys.forEach(function (k) {
+        var ph = PHRASES[k];
+        if (!ph) return;
+        html += '<button class="sheet-item phrase-row" data-phrase="' + esc(k) + '">' +
+          '<span class="grow"><b>' + esc(ph.zh) + '</b><br><span class="sub">' + esc(ph.ko) + '</span></span>' +
+          '<span class="sub">🔊</span></button>';
+      });
+    });
+    html += '</div>';
+
+    var back = document.createElement("div");
+    back.className = "backdrop";
+    back.innerHTML = html;
+    back.addEventListener("click", function (e) {
+      var row = e.target.closest("[data-phrase]");
+      if (row) { openPhrase(row.dataset.phrase); return; }   /* 목록은 열어둔 채 카드만 띄운다 */
+      if (e.target === back) back.remove();
+    });
+    document.body.appendChild(back);
+  }
+
+  document.getElementById("phraseBtn").addEventListener("click", openPhraseList);
 
   /* ────────── 렌더 ────────── */
   var page = document.getElementById("page");
