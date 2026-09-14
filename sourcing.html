@@ -42,8 +42,9 @@
     border-bottom: 1px solid var(--border);
   }
   .topbar .title {
-    flex: 1; text-align: center;
+    flex: 1; min-width: 0; text-align: center;
     font-size: 16px; font-weight: 700; letter-spacing: -0.02em;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   .icon-btn {
     border: 1px solid var(--border); background: var(--card);
@@ -302,6 +303,54 @@
   .row-del:active { background: var(--accent-soft); }
   .sheet-item .grow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+  /* ── 업체 검색 ── */
+  .search-back {
+    position: fixed; inset: 0; z-index: 60;
+    background: var(--bg); display: flex; flex-direction: column;
+  }
+  .search-bar {
+    flex: none; display: flex; align-items: center; gap: 8px;
+    padding: calc(10px + env(safe-area-inset-top, 0px)) 14px 10px;
+    background: var(--card); border-bottom: 1px solid var(--border);
+  }
+  .search-input {
+    flex: 1; min-width: 0; border: 1px solid var(--border); border-radius: 12px;
+    padding: 11px 12px; background: var(--bg); outline: none;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-cancel {
+    flex: none; border: none; background: none; color: var(--muted);
+    font-size: 14px; font-weight: 600; padding: 10px 4px;
+  }
+  .search-body { flex: 1; overflow-y: auto; padding: 10px 14px calc(24px + var(--safe-b)); }
+  .search-msg { font-size: 13px; color: var(--muted); line-height: 1.6; margin: 16px 4px; }
+  .hit {
+    display: flex; gap: 12px; width: 100%; text-align: left;
+    border: none; background: var(--card); border-radius: 14px;
+    padding: 12px; margin-bottom: 8px; box-shadow: var(--shadow);
+  }
+  .hit:active { background: var(--accent-soft); }
+  .hit-thumb {
+    flex: none; width: 64px; height: 64px; border-radius: 10px; overflow: hidden;
+    background: var(--bg); display: flex; align-items: center; justify-content: center;
+    font-size: 22px; color: var(--muted);
+  }
+  .hit-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .hit-body { flex: 1; min-width: 0; }
+  .hit-title { display: block; font-size: 15px; font-weight: 700; line-height: 1.4; }
+  .hit-sub { display: block; font-size: 12px; color: var(--muted); margin: 2px 0 6px; }
+  .hit-line {
+    font-size: 13px; line-height: 1.5; margin-top: 2px;
+    overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  }
+  .hit-label { font-size: 11px; font-weight: 700; color: var(--muted); margin-right: 4px; }
+  mark { background: var(--accent-soft); color: var(--accent); border-radius: 4px; padding: 0 2px; font-weight: 700; }
+  .block.flash { animation: flash 1.4s ease; }
+  @keyframes flash {
+    0%, 100% { box-shadow: var(--shadow); }
+    25%, 65% { box-shadow: 0 0 0 3px var(--accent); }
+  }
+
   .dialog {
     background: var(--card); border-radius: 18px; padding: 22px 20px 16px;
     width: 100%; max-width: 320px; text-align: center;
@@ -332,6 +381,7 @@
 <header class="topbar">
   <button class="icon-btn" id="menuBtn" aria-label="메뉴">☰</button>
   <button class="icon-btn" id="phraseBtn" aria-label="중국어로 물어보기">💬</button>
+  <button class="icon-btn" id="searchBtn" aria-label="업체 검색">🔍</button>
   <div class="title">아이템 소싱 노트</div>
   <button class="icon-btn" id="addVendorBtn">+ 업체</button>
 </header>
@@ -644,6 +694,11 @@
       itemCount: function (n) { return "물건 " + n; },
       delMarketAria: "시장 삭제", delVendorAria: "업체 페이지 삭제",
       langTitle: "언어 · Language",
+      searchAria: "업체 검색", menuSearch: "🔍 업체 검색",
+      searchPlaceholder: "업체명 · 메모 · 시장 검색",
+      searchHint: "업체명, 메모, 시장 이름, 가격으로 찾을 수 있어요.",
+      searchNone: "찾는 내용이 없습니다",
+      searchCount: function (n) { return "결과 " + n + "곳"; },
 
       noteQuiet: "소리가 작으면 화면을 그대로 보여주세요.",
       noteNoVoice: "이 폰에 중국어 음성이 없어 소리가 안 날 수 있어요.<br>화면을 그대로 보여주세요.",
@@ -725,6 +780,11 @@
       itemCount: function (n) { return n + " item" + (n === 1 ? "" : "s"); },
       delMarketAria: "Delete market", delVendorAria: "Delete vendor",
       langTitle: "Language · 언어",
+      searchAria: "Search vendors", menuSearch: "🔍 Search vendors",
+      searchPlaceholder: "Search vendor, notes, market",
+      searchHint: "Search by vendor name, notes, market name or price.",
+      searchNone: "No matches",
+      searchCount: function (n) { return n + " result" + (n === 1 ? "" : "s"); },
 
       noteQuiet: "Too noisy? Just show the screen to the seller.",
       noteNoVoice: "This phone has no Chinese voice installed, so it may stay silent.<br>Show the screen to the seller instead.",
@@ -806,6 +866,11 @@
       itemCount: function (n) { return "商品 " + n; },
       delMarketAria: "市場を削除", delVendorAria: "業者を削除",
       langTitle: "言語 · Language",
+      searchAria: "業者を検索", menuSearch: "🔍 業者を検索",
+      searchPlaceholder: "業者名・メモ・市場を検索",
+      searchHint: "業者名、メモ、市場名、価格で探せます。",
+      searchNone: "見つかりませんでした",
+      searchCount: function (n) { return "結果 " + n + " 件"; },
 
       noteQuiet: "音が聞こえないときは、この画面をそのまま見せてください。",
       noteNoVoice: "この端末に中国語の音声がないため、音が出ないことがあります。<br>画面をそのまま見せてください。",
@@ -887,6 +952,11 @@
       itemCount: function (n) { return n + " sản phẩm"; },
       delMarketAria: "Xóa chợ", delVendorAria: "Xóa nhà cung cấp",
       langTitle: "Ngôn ngữ · Language",
+      searchAria: "Tìm nhà cung cấp", menuSearch: "🔍 Tìm nhà cung cấp",
+      searchPlaceholder: "Tìm NCC, ghi chú, chợ",
+      searchHint: "Tìm theo tên NCC, ghi chú, tên chợ hoặc giá.",
+      searchNone: "Không tìm thấy",
+      searchCount: function (n) { return n + " kết quả"; },
 
       noteQuiet: "Ồn quá? Hãy đưa màn hình cho người bán xem.",
       noteNoVoice: "Máy này chưa có giọng tiếng Trung nên có thể không phát ra tiếng.<br>Hãy đưa màn hình cho người bán xem.",
@@ -968,6 +1038,11 @@
       itemCount: function (n) { return n + " 个货品"; },
       delMarketAria: "删除市场", delVendorAria: "删除商家",
       langTitle: "语言 · Language",
+      searchAria: "搜索商家", menuSearch: "🔍 搜索商家",
+      searchPlaceholder: "搜索商家 · 备注 · 市场",
+      searchHint: "可以按商家名称、备注、市场名称或价格搜索。",
+      searchNone: "没有找到",
+      searchCount: function (n) { return "找到 " + n + " 个商家"; },
 
       noteQuiet: "太吵听不清时，直接把屏幕给对方看。",
       noteNoVoice: "这台手机没有中文语音，可能不会发声。<br>请直接把屏幕给对方看。",
@@ -1015,6 +1090,7 @@
     document.querySelector(".topbar .title").textContent = t("title");
     document.getElementById("menuBtn").setAttribute("aria-label", t("menuAria"));
     document.getElementById("phraseBtn").setAttribute("aria-label", t("phraseAria"));
+    document.getElementById("searchBtn").setAttribute("aria-label", t("searchAria"));
     document.getElementById("addVendorBtn").textContent = t("addVendor");
     var prev = document.querySelector('[data-nav="prev"]');
     var next = document.querySelector('[data-nav="next"]');
@@ -1636,14 +1712,14 @@
   function goTo(index) {
     state.current = Math.max(0, Math.min(vendors().length - 1, index));
     save();
-    render().then(function () { window.scrollTo(0, 0); });
+    return render().then(function () { window.scrollTo(0, 0); });
   }
   function goToMarket(index, vendorIndex) {
     state.currentMarket = Math.max(0, Math.min(state.markets.length - 1, index));
     state.current = 0;
     if (typeof vendorIndex === "number") state.current = Math.max(0, Math.min(vendors().length - 1, vendorIndex));
     save();
-    render().then(function () { window.scrollTo(0, 0); });
+    return render().then(function () { window.scrollTo(0, 0); });
   }
   function addVendor() {
     vendors().push(newVendor(vendor().currency));
@@ -1658,6 +1734,184 @@
   });
 
   document.getElementById("addVendorBtn").addEventListener("click", addVendor);
+  document.getElementById("searchBtn").addEventListener("click", openSearch);
+
+  /* ────────── 업체 검색 ────────── */
+  /* 숫자는 3,200 처럼 저장되므로 비교할 때 콤마를 없앱니다 */
+  function plain(s) {
+    return String(s == null ? "" : s).toLowerCase().replace(/,/g, "").replace(/\s+/g, " ");
+  }
+  function searchTokens(q) {
+    return String(q || "").trim().toLowerCase().split(/\s+/).filter(Boolean);
+  }
+
+  /* 업체 하나가 가진 검색 대상 줄들 */
+  function searchFields(m, mi, v, vi) {
+    var fields = [
+      { label: t("marketTag"), text: marketLabel(m, mi), head: true },
+      { label: t("vendorName"), text: vendorLabel(v, vi), head: true }
+    ];
+    if (v.cardQr) fields.push({ label: t("qrLink"), text: v.cardQr });
+    v.items.forEach(function (it, i) {
+      if (isBlankItem(it)) return;
+      var chip = t("itemChip", i + 1);
+      if (String(it.price).trim()) fields.push({ label: chip + " · " + t("price"), text: it.price + " " + curSuffix(v.currency), item: it.id });
+      if (String(it.moq).trim()) fields.push({ label: chip + " · " + t("moq"), text: it.moq + " " + t("moqUnit"), item: it.id });
+      if (String(it.memo).trim()) fields.push({ label: chip + " · " + t("memo"), text: it.memo, item: it.id });
+    });
+    return fields;
+  }
+
+  function searchHits(query) {
+    var toks = searchTokens(query);
+    if (!toks.length) return [];
+    var hits = [];
+    state.markets.forEach(function (m, mi) {
+      m.vendors.forEach(function (v, vi) {
+        var fields = searchFields(m, mi, v, vi);
+        var hay = plain(fields.map(function (f) { return f.text; }).join(" \n "));
+        var all = toks.every(function (tk) { return hay.indexOf(plain(tk)) > -1; });
+        if (!all) return;
+        /* 시장·업체명은 제목 줄에 이미 나오므로 아래에는 진짜 내용만 보여준다 */
+        var lines = fields.filter(function (f) {
+          if (f.head) return false;
+          return toks.some(function (tk) { return plain(f.text).indexOf(plain(tk)) > -1; });
+        }).slice(0, 2);
+        var thumb = v.cards && v.cards[0];
+        if (!thumb) {
+          for (var i = 0; i < v.items.length; i++) {
+            if (v.items[i].photos && v.items[i].photos[0]) { thumb = v.items[i].photos[0]; break; }
+          }
+        }
+        hits.push({
+          mi: mi, vi: vi, toks: toks, lines: lines, thumb: thumb || null,
+          market: marketLabel(m, mi), vendor: vendorLabel(v, vi)
+        });
+      });
+    });
+    return hits;
+  }
+
+  /* 맞은 부분을 표시해서 눈에 바로 띄게 한다 */
+  function highlight(text, toks) {
+    var src = String(text == null ? "" : text);
+    var low = src.toLowerCase();
+    var spans = [];
+    toks.forEach(function (tk) {
+      if (!tk) return;
+      var i = low.indexOf(tk);
+      if (i < 0 && /^[0-9]+$/.test(tk)) {
+        /* 3200 으로 찾아도 3,200 에 표시되도록 */
+        var re = new RegExp(tk.split("").join("[,\\s]?"), "g"), mm;
+        while ((mm = re.exec(low))) spans.push([mm.index, mm.index + mm[0].length]);
+        return;
+      }
+      while (i > -1) { spans.push([i, i + tk.length]); i = low.indexOf(tk, i + tk.length); }
+    });
+    if (!spans.length) return esc(src);
+    spans.sort(function (a, b) { return a[0] - b[0]; });
+    var out = "", pos = 0;
+    spans.forEach(function (r) {
+      if (r[0] < pos) return;
+      out += esc(src.slice(pos, r[0])) + "<mark>" + esc(src.slice(r[0], r[1])) + "</mark>";
+      pos = r[1];
+    });
+    return out + esc(src.slice(pos));
+  }
+
+  /* 메모가 길면 맞은 자리 주변만 잘라 보여준다 */
+  function searchSnippet(text, toks) {
+    var src = String(text == null ? "" : text).replace(/\s+/g, " ").trim();
+    if (src.length <= 80) return src;
+    var low = src.toLowerCase(), at = -1;
+    toks.forEach(function (tk) {
+      var i = low.indexOf(tk);
+      if (i > -1 && (at < 0 || i < at)) at = i;
+    });
+    if (at < 30) return src.slice(0, 80) + "…";
+    var start = at - 24;
+    return "…" + src.slice(start, start + 80) + (start + 80 < src.length ? "…" : "");
+  }
+
+  function searchRow(h) {
+    var thumb = h.thumb && urlCache[h.thumb]
+      ? '<span class="hit-thumb"><img src="' + esc(urlCache[h.thumb]) + '" alt=""></span>'
+      : '<span class="hit-thumb">📄</span>';
+    var lines = h.lines.map(function (f) {
+      return '<span class="hit-line"><span class="hit-label">' + esc(f.label) + '</span>' +
+        highlight(searchSnippet(f.text, h.toks), h.toks) + '</span>';
+    }).join("");
+    var item = h.lines.length && h.lines[0].item ? ' data-hit-item="' + esc(h.lines[0].item) + '"' : "";
+    return '<button class="hit" data-hit-market="' + h.mi + '" data-hit-vendor="' + h.vi + '"' + item + '>' +
+      thumb +
+      '<span class="hit-body">' +
+        '<span class="hit-title">' + highlight(h.vendor, h.toks) + '</span>' +
+        '<span class="hit-sub">🏬 ' + highlight(h.market, h.toks) + '</span>' +
+        lines +
+      '</span></button>';
+  }
+
+  function jumpToHit(mi, vi, itemId) {
+    goToMarket(mi, vi).then(function () {
+      if (!itemId) return;
+      var el = document.querySelector('[data-item="' + itemId + '"]');
+      if (!el) return;
+      try { el.scrollIntoView({ behavior: "smooth", block: "center" }); }
+      catch (e) { el.scrollIntoView(); }
+      el.classList.add("flash");
+      setTimeout(function () { el.classList.remove("flash"); }, 1500);
+    });
+  }
+
+  function openSearch() {
+    var back = document.createElement("div");
+    back.className = "search-back";
+    back.innerHTML =
+      '<div class="search-bar">' +
+        '<input class="search-input" type="search" placeholder="' + esc(t("searchPlaceholder")) + '" autocomplete="off">' +
+        '<button class="search-cancel" data-close="1">' + esc(t("cancel")) + '</button>' +
+      '</div>' +
+      '<div class="search-body"></div>';
+
+    var input = back.querySelector(".search-input");
+    var body = back.querySelector(".search-body");
+    var seq = 0;
+
+    function msg(text) { body.innerHTML = '<p class="search-msg">' + esc(text) + '</p>'; }
+    msg(t("searchHint"));
+
+    function update() {
+      var mine = ++seq;
+      var toks = searchTokens(input.value);
+      if (!toks.length) { msg(t("searchHint")); return; }
+      var hits = searchHits(input.value);
+      if (!hits.length) { msg(t("searchNone")); return; }
+      var ids = hits.map(function (h) { return h.thumb; }).filter(Boolean);
+      ensureURLs(ids).then(function () {
+        if (mine !== seq) return;   /* 빨리 치는 동안 지난 결과가 덮어쓰지 않도록 */
+        body.innerHTML = '<p class="search-msg">' + esc(t("searchCount", hits.length)) + '</p>' +
+          hits.map(searchRow).join("");
+      });
+    }
+
+    function close() {
+      back.remove();
+      document.removeEventListener("keydown", onKey);
+    }
+    function onKey(e) { if (e.key === "Escape") close(); }
+
+    input.addEventListener("input", update);
+    back.addEventListener("click", function (e) {
+      if (e.target.closest("[data-close]")) { close(); return; }
+      var hit = e.target.closest("[data-hit-vendor]");
+      if (!hit) return;
+      close();
+      jumpToHit(parseInt(hit.dataset.hitMarket, 10), parseInt(hit.dataset.hitVendor, 10), hit.dataset.hitItem || null);
+    });
+    document.addEventListener("keydown", onKey);
+    document.body.appendChild(back);
+    input.focus();
+  }
 
   /* ────────── 메뉴 ────────── */
   document.getElementById("menuBtn").addEventListener("click", function () {
@@ -1687,6 +1941,7 @@
       '<h3>' + esc(t("vendorsHead", marketLabel(market(), state.currentMarket), vendors().length)) + '</h3>' + list +
       '<button class="sheet-item" data-act="add"><span class="grow">' + esc(t("addVendorRow")) + '</span></button>' +
       '<h3>' + esc(t("manage")) + '</h3>' +
+      '<button class="sheet-item" data-act="search"><span class="grow">' + esc(t("menuSearch")) + '</span></button>' +
       '<button class="sheet-item" data-act="copy"><span class="grow">' + esc(t("menuCopy")) + '</span></button>' +
       '<button class="sheet-item" data-act="excel"><span class="grow">' + esc(t("menuExcel")) + '</span></button>' +
       '<button class="sheet-item" data-act="backup"><span class="grow">' + esc(t("menuBackup")) + '</span></button>' +
@@ -1719,6 +1974,8 @@
       state.markets.push(newMarket());
       goToMarket(state.markets.length - 1);
       toast(t("marketAdded"));
+    } else if (act === "search") {
+      openSearch();
     } else if (act === "copy") {
       copyText();
     } else if (act === "excel") {
