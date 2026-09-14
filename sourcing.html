@@ -721,6 +721,7 @@
       '<h3>관리</h3>' +
       '<button class="sheet-item" data-act="add"><span class="grow">➕ 새 업체 페이지</span></button>' +
       '<button class="sheet-item" data-act="copy"><span class="grow">📋 현재 업체 텍스트 복사</span></button>' +
+      '<button class="sheet-item" data-act="excel"><span class="grow">📊 엑셀(XLSX) 다운로드 — 사진 포함</span></button>' +
       '<button class="sheet-item" data-act="backup"><span class="grow">💾 전체 백업 저장 (사진 포함)</span></button>' +
       '<button class="sheet-item" data-act="restore"><span class="grow">📂 백업 불러오기</span></button>' +
       '<button class="sheet-item" data-act="delVendor"><span class="grow" style="color:var(--accent)">🗑 현재 업체 페이지 삭제</span></button>' +
@@ -745,6 +746,8 @@
       toast("새 업체 페이지가 추가되었습니다");
     } else if (act === "copy") {
       copyText();
+    } else if (act === "excel") {
+      exportExcel();
     } else if (act === "backup") {
       backup();
     } else if (act === "restore") {
@@ -812,16 +815,9 @@
       pairs.forEach(function (p) { if (p) images[p[0]] = p[1]; });
       var payload = { app: "sourcing-note", version: 1, savedAt: new Date().toISOString(), state: state, images: images };
       var blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement("a");
       var d = new Date();
       var stamp = d.getFullYear() + ("0" + (d.getMonth() + 1)).slice(-2) + ("0" + d.getDate()).slice(-2);
-      a.href = url;
-      a.download = "소싱노트-" + stamp + ".json";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+      downloadBlob(blob, "소싱노트-" + stamp + ".json");
       toast("백업 파일을 저장했습니다");
     })["catch"](function () { toast("백업에 실패했습니다"); });
   }
@@ -852,6 +848,348 @@
       reader.readAsText(file);
     });
   });
+
+  /* ────────── 엑셀(XLSX) 내보내기 ────────── */
+  var EMU_PER_PX = 9525;
+  var PIC_BOX = { w: 142, h: 96 };      // 시트에 들어갈 사진 최대 크기(px)
+  var PIC_ROW_HEIGHT = 78;              // 사진이 있을 때 행 높이(pt)
+
+  var crcTable = (function () {
+    var table = [], c, n, k;
+    for (n = 0; n < 256; n++) {
+      c = n;
+      for (k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      table[n] = c >>> 0;
+    }
+    return table;
+  })();
+  function crc32(bytes) {
+    var c = 0xFFFFFFFF;
+    for (var i = 0; i < bytes.length; i++) c = crcTable[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+  function utf8(str) { return new TextEncoder().encode(str); }
+  function xmlEsc(v) {
+    return String(v == null ? "" : v)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, "");
+  }
+
+  /* 무압축(store) ZIP 작성기 — xlsx는 zip 컨테이너 */
+  function zipBlob(files) {
+    var now = new Date();
+    var dosTime = (now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1);
+    var dosDate = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+    var parts = [], central = [], offset = 0, count = 0, centralSize = 0;
+
+    files.forEach(function (f) {
+      var name = utf8(f.name);
+      var data = f.data;
+      var crc = crc32(data);
+
+      var local = new Uint8Array(30 + name.length);
+      var lv = new DataView(local.buffer);
+      lv.setUint32(0, 0x04034b50, true);
+      lv.setUint16(4, 20, true);
+      lv.setUint16(6, 0x0800, true);
+      lv.setUint16(8, 0, true);
+      lv.setUint16(10, dosTime, true);
+      lv.setUint16(12, dosDate, true);
+      lv.setUint32(14, crc, true);
+      lv.setUint32(18, data.length, true);
+      lv.setUint32(22, data.length, true);
+      lv.setUint16(26, name.length, true);
+      local.set(name, 30);
+
+      var cen = new Uint8Array(46 + name.length);
+      var cv = new DataView(cen.buffer);
+      cv.setUint32(0, 0x02014b50, true);
+      cv.setUint16(4, 20, true);
+      cv.setUint16(6, 20, true);
+      cv.setUint16(8, 0x0800, true);
+      cv.setUint16(10, 0, true);
+      cv.setUint16(12, dosTime, true);
+      cv.setUint16(14, dosDate, true);
+      cv.setUint32(16, crc, true);
+      cv.setUint32(20, data.length, true);
+      cv.setUint32(24, data.length, true);
+      cv.setUint16(28, name.length, true);
+      cv.setUint32(42, offset, true);
+      cen.set(name, 46);
+
+      parts.push(local, data);
+      central.push(cen);
+      offset += local.length + data.length;
+      centralSize += cen.length;
+      count++;
+    });
+
+    var end = new Uint8Array(22);
+    var ev = new DataView(end.buffer);
+    ev.setUint32(0, 0x06054b50, true);
+    ev.setUint16(8, count, true);
+    ev.setUint16(10, count, true);
+    ev.setUint32(12, centralSize, true);
+    ev.setUint32(16, offset, true);
+
+    return new Blob(parts.concat(central, [end]), {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    });
+  }
+
+  function blobBytes(blob) {
+    if (blob.arrayBuffer) {
+      return blob.arrayBuffer().then(function (ab) { return new Uint8Array(ab); });
+    }
+    return new Promise(function (resolve, reject) {
+      var r = new FileReader();
+      r.onload = function () { resolve(new Uint8Array(r.result)); };
+      r.onerror = function () { reject(r.error); };
+      r.readAsArrayBuffer(blob);
+    });
+  }
+
+  /* 엑셀에 넣을 축소본 만들기 (원본을 그대로 넣으면 파일이 너무 커짐) */
+  function makeThumb(blob) {
+    return loadBitmap(blob).then(function (src) {
+      var w = src.width || src.naturalWidth;
+      var h = src.height || src.naturalHeight;
+      var scale = Math.min(1, 420 / Math.max(w, h));
+      var cw = Math.max(1, Math.round(w * scale));
+      var ch = Math.max(1, Math.round(h * scale));
+      var canvas = document.createElement("canvas");
+      canvas.width = cw; canvas.height = ch;
+      canvas.getContext("2d").drawImage(src, 0, 0, cw, ch);
+      if (src.close) src.close();
+      return new Promise(function (resolve) {
+        if (canvas.toBlob) canvas.toBlob(function (b) { resolve(b || dataURLtoBlob(canvas.toDataURL("image/jpeg", 0.8))); }, "image/jpeg", 0.8);
+        else resolve(dataURLtoBlob(canvas.toDataURL("image/jpeg", 0.8)));
+      }).then(blobBytes).then(function (bytes) {
+        return { bytes: bytes, w: cw, h: ch };
+      });
+    });
+  }
+
+  function colLetter(index) {
+    var s = "", i = index;
+    do { s = String.fromCharCode(65 + (i % 26)) + s; i = Math.floor(i / 26) - 1; } while (i >= 0);
+    return s;
+  }
+  function cellStr(col, row, text, style) {
+    var ref = colLetter(col) + row;
+    if (text == null || text === "") return '<c r="' + ref + '" s="' + style + '"/>';
+    return '<c r="' + ref + '" t="inlineStr" s="' + style + '"><is><t xml:space="preserve">' + xmlEsc(text) + '</t></is></c>';
+  }
+  function cellNum(col, row, value, style) {
+    return '<c r="' + colLetter(col) + row + '" s="' + style + '"><v>' + value + '</v></c>';
+  }
+  /* "1,234" 처럼 입력된 값은 숫자 셀로, 그 외에는 글자 셀로 */
+  function numericCell(col, row, raw, numStyle, textStyle) {
+    var text = String(raw == null ? "" : raw).trim();
+    if (!text) return cellStr(col, row, "", numStyle);
+    var stripped = text.replace(/,/g, "");
+    if (/^\d+(\.\d+)?$/.test(stripped)) return cellNum(col, row, stripped, numStyle);
+    return cellStr(col, row, text, textStyle);
+  }
+
+  var XLSX_HEADERS = ["업체 번호", "업체명 / 담당자", "통화", "명함", "물건 번호", "물건 사진", "가격", "최소수량", "메모"];
+  var XLSX_WIDTHS = [9, 24, 12, 22, 9, 22, 14, 12, 46];
+
+  function stylesXML() {
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+      '<numFmts count="1"><numFmt numFmtId="164" formatCode="#,##0.##"/></numFmts>' +
+      '<fonts count="2">' +
+        '<font><sz val="11"/><color rgb="FF2B2B2B"/><name val="맑은 고딕"/></font>' +
+        '<font><b/><sz val="11"/><color rgb="FFB2412F"/><name val="맑은 고딕"/></font>' +
+      '</fonts>' +
+      '<fills count="3">' +
+        '<fill><patternFill patternType="none"/></fill>' +
+        '<fill><patternFill patternType="gray125"/></fill>' +
+        '<fill><patternFill patternType="solid"><fgColor rgb="FFF6D9D3"/><bgColor indexed="64"/></patternFill></fill>' +
+      '</fills>' +
+      '<borders count="2">' +
+        '<border><left/><right/><top/><bottom/><diagonal/></border>' +
+        '<border><left style="hair"><color rgb="FFD8D2CA"/></left><right style="hair"><color rgb="FFD8D2CA"/></right>' +
+        '<top style="hair"><color rgb="FFD8D2CA"/></top><bottom style="hair"><color rgb="FFD8D2CA"/></bottom><diagonal/></border>' +
+      '</borders>' +
+      '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+      '<cellXfs count="5">' +
+        '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>' +
+        '<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>' +
+        '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>' +
+        '<xf numFmtId="164" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf>' +
+        '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="top" wrapText="1"/></xf>' +
+      '</cellXfs>' +
+      '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>' +
+      '</styleSheet>';
+  }
+
+  function sheetXML(rows, rowHeight, hasDrawing) {
+    var x = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"' +
+      ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+      '<sheetViews><sheetView tabSelected="1" workbookViewId="0">' +
+      '<pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/>' +
+      '</sheetView></sheetViews>' +
+      '<sheetFormatPr defaultRowHeight="16.5"/><cols>';
+    XLSX_WIDTHS.forEach(function (w, i) {
+      x += '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w + '" customWidth="1"/>';
+    });
+    x += '</cols><sheetData><row r="1" ht="28" customHeight="1">';
+    XLSX_HEADERS.forEach(function (h, i) { x += cellStr(i, 1, h, 1); });
+    x += '</row>';
+
+    rows.forEach(function (row, i) {
+      var r = i + 2;
+      x += '<row r="' + r + '" ht="' + rowHeight + '" customHeight="1">' +
+        cellNum(0, r, row.vendorNo, 2) +
+        cellStr(1, r, row.vendorName, 4) +
+        cellStr(2, r, row.currency, 2) +
+        cellStr(3, r, "", 2) +
+        (row.itemNo ? cellNum(4, r, row.itemNo, 2) : cellStr(4, r, "", 2)) +
+        cellStr(5, r, "", 2) +
+        numericCell(6, r, row.price, 3, 2) +
+        numericCell(7, r, row.moq, 3, 2) +
+        cellStr(8, r, row.memo, 4) +
+        '</row>';
+    });
+
+    x += '</sheetData><autoFilter ref="A1:' + colLetter(XLSX_HEADERS.length - 1) + (rows.length + 1) + '"/>';
+    if (hasDrawing) x += '<drawing r:id="rId1"/>';
+    return x + '</worksheet>';
+  }
+
+  function drawingXML(pics) {
+    var x = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing"' +
+      ' xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"' +
+      ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">';
+    pics.forEach(function (p, i) {
+      var scale = Math.min(PIC_BOX.w / p.thumb.w, PIC_BOX.h / p.thumb.h, 1);
+      var cx = Math.round(p.thumb.w * scale * EMU_PER_PX);
+      var cy = Math.round(p.thumb.h * scale * EMU_PER_PX);
+      x += '<xdr:oneCellAnchor>' +
+        '<xdr:from><xdr:col>' + p.col + '</xdr:col><xdr:colOff>38100</xdr:colOff>' +
+        '<xdr:row>' + p.row + '</xdr:row><xdr:rowOff>38100</xdr:rowOff></xdr:from>' +
+        '<xdr:ext cx="' + cx + '" cy="' + cy + '"/>' +
+        '<xdr:pic><xdr:nvPicPr><xdr:cNvPr id="' + (i + 2) + '" name="사진 ' + (i + 1) + '"/>' +
+        '<xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr>' +
+        '<xdr:blipFill><a:blip r:embed="rId' + (i + 1) + '"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill>' +
+        '<xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm>' +
+        '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr>' +
+        '</xdr:pic><xdr:clientData/></xdr:oneCellAnchor>';
+    });
+    return x + '</xdr:wsDr>';
+  }
+
+  function exportExcel() {
+    var rows = [], picJobs = [];
+    state.vendors.forEach(function (v, vi) {
+      var cur = CURRENCIES[v.currency] || CURRENCIES.KRW;
+      var items = v.items.length ? v.items : [null];
+      items.forEach(function (it, ii) {
+        rows.push({
+          vendorNo: vi + 1,
+          vendorName: v.name || "이름 없는 업체",
+          currency: cur.label,
+          itemNo: it ? ii + 1 : 0,
+          price: it ? it.price : "",
+          moq: it ? it.moq : "",
+          memo: it ? it.memo : ""
+        });
+        var rowIndex = rows.length;                  // 헤더가 1행이므로 0-based 행 = rows.length
+        if (ii === 0 && v.card) picJobs.push({ row: rowIndex, col: 3, id: v.card });
+        if (it && it.photo) picJobs.push({ row: rowIndex, col: 5, id: it.photo });
+      });
+    });
+
+    if (!rows.length) { toast("내보낼 내용이 없습니다"); return; }
+    toast("엑셀 파일 만드는 중…");
+
+    return Promise.all(picJobs.map(function (job) {
+      return dbGet("images", job.id).then(function (blob) {
+        if (!blob) return null;
+        return makeThumb(blob).then(function (thumb) { job.thumb = thumb; return job; });
+      })["catch"](function () { return null; });
+    })).then(function (result) {
+      var pics = result.filter(Boolean);
+      var files = [];
+
+      var contentTypes = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+        '<Default Extension="xml" ContentType="application/xml"/>' +
+        '<Default Extension="jpeg" ContentType="image/jpeg"/>' +
+        '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
+        '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>' +
+        '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' +
+        (pics.length ? '<Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>' : "") +
+        '</Types>';
+
+      var rootRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>' +
+        '</Relationships>';
+
+      var workbook = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"' +
+        ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+        '<sheets><sheet name="소싱목록" sheetId="1" r:id="rId1"/></sheets></workbook>';
+
+      var workbookRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>' +
+        '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
+        '</Relationships>';
+
+      files.push({ name: "[Content_Types].xml", data: utf8(contentTypes) });
+      files.push({ name: "_rels/.rels", data: utf8(rootRels) });
+      files.push({ name: "xl/workbook.xml", data: utf8(workbook) });
+      files.push({ name: "xl/_rels/workbook.xml.rels", data: utf8(workbookRels) });
+      files.push({ name: "xl/styles.xml", data: utf8(stylesXML()) });
+      files.push({ name: "xl/worksheets/sheet1.xml", data: utf8(sheetXML(rows, pics.length ? PIC_ROW_HEIGHT : 22, pics.length > 0)) });
+
+      if (pics.length) {
+        var sheetRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+          '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+          '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/>' +
+          '</Relationships>';
+        var drawingRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+          '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+          pics.map(function (p, i) {
+            return '<Relationship Id="rId' + (i + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image' + (i + 1) + '.jpeg"/>';
+          }).join("") + '</Relationships>';
+
+        files.push({ name: "xl/worksheets/_rels/sheet1.xml.rels", data: utf8(sheetRels) });
+        files.push({ name: "xl/drawings/drawing1.xml", data: utf8(drawingXML(pics)) });
+        files.push({ name: "xl/drawings/_rels/drawing1.xml.rels", data: utf8(drawingRels) });
+        pics.forEach(function (p, i) {
+          files.push({ name: "xl/media/image" + (i + 1) + ".jpeg", data: p.thumb.bytes });
+        });
+      }
+
+      var blob = zipBlob(files);
+      var d = new Date();
+      var stamp = d.getFullYear() + ("0" + (d.getMonth() + 1)).slice(-2) + ("0" + d.getDate()).slice(-2);
+      downloadBlob(blob, "소싱목록-" + stamp + ".xlsx");
+      toast("엑셀 파일을 저장했습니다");
+    })["catch"](function () {
+      toast("엑셀 저장에 실패했습니다");
+    });
+  }
+
+  function downloadBlob(blob, filename) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+  }
 
   /* ────────── 시작 ────────── */
   dbGet("kv", "state").then(function (saved) {
