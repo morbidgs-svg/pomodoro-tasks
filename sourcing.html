@@ -165,6 +165,10 @@
     font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 6px;
   }
   .label-say { display: inline-flex; align-items: center; gap: 7px; }
+  .label-row .zh {
+    font-size: 13px; font-weight: 700; color: var(--text);
+    letter-spacing: 0.02em;
+  }
   .say {
     flex: none; border: 1px solid var(--border); background: var(--card);
     border-radius: 9px; padding: 2px 7px; font-size: 13px; line-height: 1.5;
@@ -901,12 +905,12 @@
             '<button class="del-btn" data-del-item="' + esc(it.id) + '">✕ 삭제</button></div>' +
           photoSlot("item", "item:" + it.id, it.photo, "물건 사진 촬영") +
           '<div class="row field">' +
-            '<div><div class="label-row"><span>가격</span>' +
+            '<div><div class="label-row"><span>가격 <b class="zh">价格</b></span>' +
               '<button class="say" data-say="price" aria-label="중국어로 가격 물어보기">🔊</button></div>' +
               '<div class="with-suffix">' +
               '<input class="input" type="text" inputmode="decimal" data-field="price" placeholder="0" value="' + esc(it.price) + '">' +
               '<span class="suffix">' + esc(cur.suffix) + '</span></div></div>' +
-            '<div><div class="label-row"><span>최소수량</span>' +
+            '<div><div class="label-row"><span>최소수량 <b class="zh">起订量</b></span>' +
               '<button class="say" data-say="moq" aria-label="중국어로 최소수량 물어보기">🔊</button></div>' +
               '<div class="with-suffix">' +
               '<input class="input" type="text" inputmode="numeric" data-field="moq" placeholder="0" value="' + esc(it.moq) + '">' +
