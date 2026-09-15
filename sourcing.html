@@ -361,9 +361,16 @@
     font-size: 27px; line-height: 1;
     box-shadow: 0 6px 18px rgba(0,0,0,0.22);
     display: flex; align-items: center; justify-content: center;
+    touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
   }
   .fab:active { transform: scale(0.94); }
   .fab::after { content: ""; position: absolute; inset: -6px; border-radius: 50%; }
+  /* 꾹 누르면 집어서 옮기는 중 */
+  .fab.drag { transform: scale(1.15); opacity: 0.93; box-shadow: 0 10px 26px rgba(0,0,0,0.3); }
+  /* 번역 화면 위에서는 나가기 버튼이 된다 */
+  body.trans-open .fab { z-index: 65; background: var(--text); font-size: 24px; }
+  /* 검색처럼 다른 전체 화면에서는 숨긴다 */
+  body.has-overlay:not(.trans-open) .fab { display: none; }
 
   /* ── 대화 번역 ── */
   .trans-back { position: fixed; inset: 0; z-index: 60; background: var(--bg); display: flex; flex-direction: column; }
@@ -642,6 +649,28 @@
     }
     return null;
   }
+  var FAB_SIZE = 62;
+  /* 동그란 버튼 위치. 화면 오른쪽·아래에서 몇 px 인지로 기억한다 */
+  function placeFab() {
+    var el = document.getElementById("transBtn");
+    if (!el) return;
+    var pos = (state && state.fab) || { r: 16, b: 78 };
+    var open = document.body.classList.contains("trans-open");
+    var w = window.innerWidth, h = window.innerHeight;
+    var r = Math.min(Math.max(pos.r, 8), Math.max(8, w - FAB_SIZE - 8));
+    /* 번역 화면에서는 아래 마이크 동그라미를 가리지 않게 띄워준다 */
+    var low = open ? 200 : 74;
+    var b = Math.min(Math.max(pos.b, low), Math.max(low, h - FAB_SIZE - 72));
+    el.style.right = r + "px";
+    el.style.bottom = b + "px";
+  }
+  function paintFab() {
+    var el = document.getElementById("transBtn");
+    if (!el) return;
+    el.textContent = document.body.classList.contains("trans-open") ? "✕" : "🎤";
+    placeFab();
+  }
+
   function normalize(s) {
     s.markets.forEach(function (m) {
       if (!Array.isArray(m.vendors) || !m.vendors.length) m.vendors = [newVendor()];
@@ -661,6 +690,7 @@
         while (v.items.length < INITIAL_ITEMS) v.items.push(newItem());
       });
     });
+    if (!s.fab || typeof s.fab.r !== "number" || typeof s.fab.b !== "number") s.fab = { r: 16, b: 78 };
     s.currentMarket = Math.max(0, Math.min(s.markets.length - 1, s.currentMarket || 0));
     s.current = Math.max(0, Math.min(s.markets[s.currentMarket].vendors.length - 1, s.current || 0));
     if (!s.lastCurrency) {
@@ -1663,7 +1693,68 @@
   }
 
   document.getElementById("phraseBtn").addEventListener("click", openPhraseList);
-  document.getElementById("transBtn").addEventListener("click", function () { openTranslator(); });
+  var closeTranslator = null;          /* 번역 화면이 열려 있으면 닫는 함수가 들어간다 */
+  function toggleTranslator() {
+    if (closeTranslator) closeTranslator();
+    else openTranslator();
+  }
+
+  /* 동그란 버튼: 톡 누르면 번역 화면 열기/닫기, 꾹 누르면 집어서 옮기기 */
+  (function () {
+    var fab = document.getElementById("transBtn");
+    if (!window.PointerEvent) {
+      fab.addEventListener("click", toggleTranslator);
+      return;
+    }
+    var timer = null, pid = null, dragging = false, moved = false;
+    var startX = 0, startY = 0, baseR = 0, baseB = 0;
+
+    fab.addEventListener("pointerdown", function (e) {
+      if (e.button !== undefined && e.button !== 0) return;
+      e.preventDefault();
+      pid = e.pointerId;
+      startX = e.clientX; startY = e.clientY;
+      dragging = false; moved = false;
+      baseR = parseFloat(fab.style.right) || parseFloat(getComputedStyle(fab).right) || 16;
+      baseB = parseFloat(fab.style.bottom) || parseFloat(getComputedStyle(fab).bottom) || 78;
+      try { fab.setPointerCapture(pid); } catch (err) {}
+      timer = setTimeout(function () {
+        dragging = true;
+        fab.classList.add("drag");
+      }, 400);
+    });
+
+    fab.addEventListener("pointermove", function (e) {
+      if (pid === null) return;
+      var dx = e.clientX - startX, dy = e.clientY - startY;
+      if (!dragging) {
+        if (Math.abs(dx) > 10 || Math.abs(dy) > 10) { moved = true; clearTimeout(timer); }
+        return;
+      }
+      e.preventDefault();
+      state.fab = { r: baseR - dx, b: baseB - dy };
+      placeFab();
+    });
+
+    function finish() {
+      if (pid === null) return;
+      clearTimeout(timer);
+      var wasDrag = dragging;
+      pid = null; dragging = false;
+      fab.classList.remove("drag");
+      if (wasDrag) {
+        /* 화면 밖으로 나가지 않게 다듬은 자리를 그대로 저장한다 */
+        state.fab = { r: parseFloat(fab.style.right) || 16, b: parseFloat(fab.style.bottom) || 78 };
+        save();
+        return;
+      }
+      if (!moved) toggleTranslator();
+    }
+    fab.addEventListener("pointerup", finish);
+    fab.addEventListener("pointercancel", finish);
+    fab.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+  })();
+  window.addEventListener("resize", placeFab);
 
   /* ────────── 대화 번역 ────────── */
   /* 번역은 이 폰에서 바로 부른다. 크롬에 번역기가 내장돼 있으면 그걸 먼저 쓰고(공짜·빠름),
@@ -2001,7 +2092,10 @@
       if (window.speechSynthesis) { try { speechSynthesis.cancel(); } catch (e) {} }
       document.removeEventListener("keydown", onKey);
       document.body.classList.remove("has-overlay");
+      document.body.classList.remove("trans-open");
       back.remove();
+      closeTranslator = null;
+      paintFab();
     }
     function onKey(e) { if (e.key === "Escape") close(); }
 
@@ -2062,8 +2156,10 @@
 
     drawButtons();
     draw();
-    document.body.classList.add("has-overlay");
+    document.body.classList.add("has-overlay", "trans-open");
     document.body.appendChild(back);
+    closeTranslator = close;
+    paintFab();
   }
 
 
@@ -3214,6 +3310,7 @@
     talk = TALK_NAME[state.talk] ? state.talk : defaultTalk();
     state.talk = talk;
     applyLang();
+    placeFab();
     if (saved) save();        /* 옛 형식을 읽었으면 새 형식으로 다시 저장해둔다 */
     return render();
   }).then(function () {
@@ -3225,6 +3322,7 @@
     lang = detectLang();
     talk = defaultTalk();
     applyLang();
+    placeFab();
     render();
     toast(t("storageWarn"));
   });
