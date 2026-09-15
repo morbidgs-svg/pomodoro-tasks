@@ -2159,14 +2159,18 @@
     rec.maxAlternatives = 1;
     rec.continuous = true;          /* 버튼을 누르고 있는 동안 계속 듣는다 */
     var fin = "", heard = "", failed = false;
+    /* 인식 결과는 올 때마다 처음부터 다시 조립한다.
+       바뀐 부분만 이어붙이면 폰에 따라 같은 말이 여러 번 들어와 "개별개별개별" 처럼 겹친다 */
     rec.onresult = function (e) {
-      var live = "";
-      for (var i = e.resultIndex; i < e.results.length; i++) {
+      var done = "", live = "";
+      for (var i = 0; i < e.results.length; i++) {
         var r = e.results[i];
-        if (r.isFinal) fin += r[0].transcript;
+        if (!r || !r[0]) continue;
+        if (r.isFinal) done += r[0].transcript;
         else live += r[0].transcript;
       }
-      heard = (fin + live).trim();
+      fin = done;
+      heard = (done + live).replace(/\s+/g, " ").trim();
       on.partial(heard);
     };
     rec.onerror = function (e) { failed = true; on.error((e && e.error) || "error"); };
