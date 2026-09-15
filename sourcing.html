@@ -19,6 +19,25 @@
     --safe-b: env(safe-area-inset-bottom, 0px);
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  button, .nav, .shot { touch-action: manipulation; }
+
+  /* 손가락이 닿는 범위를 넓힌다 — 보이는 크기는 그대로 두고 둘레만 키운다 */
+  .icon-btn, .say, .del-btn, .market-more, .search-cancel,
+  .trans-bar .mini, .trans-type .side, .trans-type .send,
+  .bub .acts button, .row-del { position: relative; }
+  .icon-btn::after, .say::after, .del-btn::after, .market-more::after, .search-cancel::after,
+  .trans-bar .mini::after, .trans-type .side::after, .trans-type .send::after,
+  .bub .acts button::after, .row-del::after { content: ""; position: absolute; }
+  .icon-btn::after { inset: -4px -1px; }
+  .say::after { inset: -10px -8px; }
+  .market-more::after { inset: -6px -4px; }
+  .search-cancel::after { inset: -5px -8px; }
+  .trans-bar .mini::after { inset: -8px -6px; }
+  .trans-type .side::after, .trans-type .send::after { inset: -7px -3px; }
+  .bub .acts button::after { inset: -9px -3px; }
+  .row-del::after { inset: -6px -4px; }
+  /* 지우는 버튼은 실수로 눌리면 곤란하니 조금만 넓힌다 */
+  .del-btn::after { inset: -7px -6px; }
   html, body { margin: 0; }
   body {
     font-family: -apple-system, "Segoe UI", "Noto Sans KR", sans-serif;
@@ -84,14 +103,14 @@
   }
   .market-input {
     flex: 1; min-width: 0; border: none; background: none;
-    font-size: 17px; font-weight: 700; padding: 6px 2px; outline: none;
+    font-size: 17px; font-weight: 700; padding: 12px 2px; outline: none;
   }
   .market-input::placeholder { font-weight: 600; color: var(--muted); }
   .market-input:focus { border-bottom: 2px solid var(--accent); }
   .market-more {
     flex: none; border: 1px solid var(--border); background: var(--card);
     color: var(--muted); border-radius: 10px;
-    padding: 8px 10px; font-size: 12px; font-weight: 700;
+    padding: 10px 11px; font-size: 12px; font-weight: 700;
   }
   .market-more:active { background: var(--accent-soft); color: var(--accent); }
 
@@ -200,7 +219,7 @@
   }
   .say {
     flex: none; border: 1px solid var(--border); background: var(--card);
-    border-radius: 9px; padding: 2px 7px; font-size: 13px; line-height: 1.5;
+    border-radius: 9px; padding: 4px 9px; font-size: 14px; line-height: 1.5;
   }
   .say:active { background: var(--accent-soft); }
 
@@ -296,7 +315,7 @@
   .sheet .hint { font-size: 12px; color: var(--muted); line-height: 1.6; margin: 12px 4px 2px; }
   .seg { display: flex; gap: 8px; margin: 4px 4px 14px; }
   .seg button {
-    flex: 1; padding: 10px 6px; border-radius: 12px; font-size: 15px; font-weight: 700;
+    flex: 1; padding: 13px 6px; border-radius: 12px; font-size: 15px; font-weight: 700;
     border: 1px solid var(--border); background: var(--card); color: var(--muted);
   }
   .seg button.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
@@ -344,7 +363,7 @@
   .trans-pair { flex: 1; min-width: 0; font-size: 15px; font-weight: 700; text-align: center; }
   .trans-bar .mini {
     flex: none; border: 1px solid var(--border); background: var(--bg); color: var(--muted);
-    border-radius: 10px; padding: 7px 10px; font-size: 13px; font-weight: 600;
+    border-radius: 11px; padding: 10px 12px; font-size: 13px; font-weight: 600;
   }
   .trans-body { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
   .trans-empty { margin: auto; text-align: center; color: var(--muted); font-size: 14px; line-height: 1.8; white-space: pre-line; }
@@ -354,10 +373,10 @@
   .bub .src { font-size: 12px; color: var(--muted); line-height: 1.5; margin-bottom: 4px; }
   .bub .dst { font-size: 19px; font-weight: 700; line-height: 1.45; word-break: keep-all; }
   .bub.wait .dst, .bub.fail .dst { font-size: 14px; font-weight: 600; color: var(--muted); }
-  .bub .acts { display: flex; gap: 6px; margin-top: 8px; }
+  .bub .acts { display: flex; gap: 10px; margin-top: 10px; }
   .bub .acts button {
     border: 1px solid var(--border); background: var(--bg); color: var(--muted);
-    border-radius: 9px; padding: 4px 9px; font-size: 12px; font-weight: 600;
+    border-radius: 10px; padding: 7px 13px; font-size: 14px; font-weight: 600;
   }
   .trans-type { flex: none; display: flex; gap: 6px; padding: 0 14px 8px; }
   .trans-type .side {
