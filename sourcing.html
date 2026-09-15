@@ -401,16 +401,31 @@
     border-radius: 11px; padding: 8px 12px; font-size: 14px; font-weight: 700;
   }
   .trans-foot {
-    flex: none; display: flex; gap: 8px;
-    padding: 10px 14px calc(12px + var(--safe-b));
+    flex: none; display: flex; justify-content: space-around; align-items: flex-start;
+    padding: 14px 14px calc(14px + var(--safe-b));
     background: var(--card); border-top: 1px solid var(--border);
   }
   .mic {
-    flex: 1; min-width: 0; border: 1px solid var(--border); background: var(--bg); color: var(--text);
-    border-radius: 14px; padding: 15px 8px; font-size: 15px; font-weight: 700;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    flex: none; border: none; background: none; padding: 0; color: var(--text);
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: none;
   }
-  .mic.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .mic .dot {
+    width: 86px; height: 86px; border-radius: 50%;
+    border: 1px solid var(--border); background: var(--bg);
+    display: flex; align-items: center; justify-content: center; font-size: 34px; line-height: 1;
+    transition: transform 0.12s, background 0.12s;
+  }
+  .mic .lab { font-size: 14px; font-weight: 700; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mic.on .dot {
+    background: var(--accent); border-color: var(--accent);
+    transform: scale(1.06); animation: micPulse 1.3s infinite;
+  }
+  .mic.on .lab { color: var(--accent); }
+  @keyframes micPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(226,99,79,0.45); }
+    50% { box-shadow: 0 0 0 16px rgba(226,99,79,0); }
+  }
   .search-bar {
     flex: none; display: flex; align-items: center; gap: 8px;
     padding: calc(10px + env(safe-area-inset-top, 0px)) 14px 10px;
@@ -813,7 +828,8 @@
       talkSet: function (n) { return "이제 " + n + "로 물어봐요"; },
       searchAria: "업체 검색", menuSearch: "🔍 업체 검색",
       menuTalk: "🎤 대화 번역", transListening: "듣는 중…",
-      transEmpty: "아래 🎤 를 누르고 말해보세요.\n번역된 말은 화면으로 보여주면 됩니다.",
+      transEmpty: "아래 🎤 를 꾹 누른 채로 말하세요.\n손을 떼면 번역해서 보여줍니다.",
+      transHold: "🎤 를 꾹 누른 채로 말하세요",
       transTyping: "직접 입력", transSend: "번역", transClear: "지우기",
       transFail: "번역을 못 했어요. 다시 눌러보세요.",
       transOffline: "인터넷이 없어 번역이 안 돼요. 💬 문장은 그대로 쓸 수 있어요.",
@@ -913,7 +929,8 @@
       talkSet: function (n) { return "Now asking in " + n; },
       searchAria: "Search vendors", menuSearch: "🔍 Search vendors",
       menuTalk: "🎤 Live translation", transListening: "Listening…",
-      transEmpty: "Tap 🎤 below and speak.\nShow the translated line to the seller.",
+      transEmpty: "Hold 🎤 below while you speak.\nRelease and it translates.",
+      transHold: "Hold 🎤 down while you speak",
       transTyping: "Type instead", transSend: "Translate", transClear: "Clear",
       transFail: "Could not translate. Try again.",
       transOffline: "No internet, so translation is off. The 💬 phrases still work.",
@@ -1013,7 +1030,8 @@
       talkSet: function (n) { return "これからは" + n + "で聞きます"; },
       searchAria: "業者を検索", menuSearch: "🔍 業者を検索",
       menuTalk: "🎤 会話翻訳", transListening: "聞いています…",
-      transEmpty: "下の 🎤 を押して話してください。\n訳した言葉は画面で見せればOKです。",
+      transEmpty: "下の 🎤 を押したまま話してください。\n離すと翻訳します。",
+      transHold: "🎤 を押したまま話してください",
       transTyping: "直接入力", transSend: "翻訳", transClear: "消す",
       transFail: "翻訳できませんでした。もう一度お試しください。",
       transOffline: "インターネットがないため翻訳できません。💬 の文はそのまま使えます。",
@@ -1113,7 +1131,8 @@
       talkSet: function (n) { return "Bây giờ hỏi bằng " + n; },
       searchAria: "Tìm nhà cung cấp", menuSearch: "🔍 Tìm nhà cung cấp",
       menuTalk: "🎤 Dịch hội thoại", transListening: "Đang nghe…",
-      transEmpty: "Nhấn 🎤 bên dưới rồi nói.\nĐưa màn hình cho người bán xem câu đã dịch.",
+      transEmpty: "Giữ 🎤 bên dưới trong khi nói.\nThả tay ra là dịch ngay.",
+      transHold: "Giữ 🎤 trong khi nói",
       transTyping: "Gõ trực tiếp", transSend: "Dịch", transClear: "Xoá",
       transFail: "Không dịch được. Hãy thử lại.",
       transOffline: "Không có mạng nên không dịch được. Các câu ở 💬 vẫn dùng được.",
@@ -1213,7 +1232,8 @@
       talkSet: function (n) { return "现在用" + n + "询问"; },
       searchAria: "搜索商家", menuSearch: "🔍 搜索商家",
       menuTalk: "🎤 对话翻译", transListening: "正在听…",
-      transEmpty: "点下面的 🎤 说话。\n把翻译好的话给对方看就行。",
+      transEmpty: "按住下面的 🎤 说话。\n松手就会翻译。",
+      transHold: "请按住 🎤 不放再说话",
       transTyping: "直接输入", transSend: "翻译", transClear: "清空",
       transFail: "翻译失败，请再试一次。",
       transOffline: "没有网络，无法翻译。💬 里的句子仍然可用。",
@@ -1742,8 +1762,8 @@
     rec.lang = tag;
     rec.interimResults = true;
     rec.maxAlternatives = 1;
-    rec.continuous = false;
-    var fin = "", failed = false;
+    rec.continuous = true;          /* 버튼을 누르고 있는 동안 계속 듣는다 */
+    var fin = "", heard = "", failed = false;
     rec.onresult = function (e) {
       var live = "";
       for (var i = e.resultIndex; i < e.results.length; i++) {
@@ -1751,10 +1771,12 @@
         if (r.isFinal) fin += r[0].transcript;
         else live += r[0].transcript;
       }
-      on.partial((fin + live).trim());
+      heard = (fin + live).trim();
+      on.partial(heard);
     };
     rec.onerror = function (e) { failed = true; on.error((e && e.error) || "error"); };
-    rec.onend = function () { if (!failed) on.done(fin.trim()); };
+    /* 손을 뗀 순간 확정 결과가 아직 없을 수 있어, 듣고 있던 말이라도 쓴다 */
+    rec.onend = function () { if (!failed) on.done((fin.trim() || heard).trim()); };
     try { rec.start(); } catch (e) { failed = true; on.error("busy"); return null; }
     return rec;
   }
@@ -1787,8 +1809,8 @@
         '<button class="send" data-send="1">' + esc(t("transSend")) + '</button>' +
       '</div>' +
       '<div class="trans-foot">' +
-        '<button class="mic" data-mic="me"></button>' +
-        '<button class="mic" data-mic="you"></button>' +
+        '<button class="mic" data-mic="me"><span class="dot">🎤</span><span class="lab"></span></button>' +
+        '<button class="mic" data-mic="you"><span class="dot">🎤</span><span class="lab"></span></button>' +
       '</div>';
 
     var body = back.querySelector(".trans-body");
@@ -1801,8 +1823,8 @@
     function drawButtons() {
       pair.textContent = listening ? t("transListening") : (myLangName() + " ⇄ " + talkLangName());
       sideBtn.textContent = side === "me" ? myLangName() : talkLangName();
-      micMe.textContent = (listening === "me" ? "⏺ " : "🎤 ") + myLangName();
-      micYou.textContent = (listening === "you" ? "⏺ " : "🎤 ") + talkLangName();
+      micMe.querySelector(".lab").textContent = myLangName();
+      micYou.querySelector(".lab").textContent = talkLangName();
       micMe.className = "mic" + (listening === "me" ? " on" : "");
       micYou.className = "mic" + (listening === "you" ? " on" : "");
     }
@@ -1858,15 +1880,19 @@
       return t("transFail");
     }
 
+    var dropDraft = null;          /* 지금 듣고 있는 말풍선을 버리는 함수 */
     function stopMic() {
-      if (rec) { try { rec.stop(); } catch (e) {} rec = null; }
+      if (rec) { try { rec.stop(); } catch (e) {} }   /* 멈추면 onend 에서 번역으로 넘어간다 */
+    }
+    function cancelMic() {
+      if (dropDraft) dropDraft();
+      if (rec) { try { rec.abort ? rec.abort() : rec.stop(); } catch (e) {} rec = null; }
       listening = "";
       drawButtons();
     }
 
     function startMic(which) {
-      if (listening === which) { stopMic(); return; }
-      stopMic();
+      cancelMic();
       var mine = which === "me";
       var from = mine ? lang : talk;
       var draft = null;
@@ -1880,6 +1906,7 @@
         draft = null;
         draw();
       }
+      dropDraft = drop;
 
       rec = listen(VOICE_TAG[from] || "zh-CN", {
         partial: function (txt) {
@@ -1893,11 +1920,11 @@
         },
         error: function (kind) {
           drop();
-          rec = null; listening = ""; drawButtons();
-          toast(micError(kind));
+          rec = null; listening = ""; dropDraft = null; drawButtons();
+          if (kind !== "aborted") toast(micError(kind));
         },
         done: function (txt) {
-          rec = null; listening = ""; drawButtons();
+          rec = null; listening = ""; dropDraft = null; drawButtons();
           if (!txt) { drop(); toast(t("transNoSpeech")); return; }
           if (!draft) {
             draft = { mine: mine, src: txt, dst: "", from: from, to: mine ? talk : lang, state: "wait" };
@@ -1970,7 +1997,7 @@
     }
 
     function close() {
-      stopMic();
+      cancelMic();
       if (window.speechSynthesis) { try { speechSynthesis.cancel(); } catch (e) {} }
       document.removeEventListener("keydown", onKey);
       document.body.classList.remove("has-overlay");
@@ -1983,8 +2010,6 @@
       if (e.target.closest("[data-clear]")) { log = []; draw(); return; }
       if (e.target.closest("[data-side]")) { side = side === "me" ? "you" : "me"; drawButtons(); input.focus(); return; }
       if (e.target.closest("[data-send]")) { sendTyped(); return; }
-      var mic = e.target.closest("[data-mic]");
-      if (mic) { startMic(mic.dataset.mic); return; }
       var say = e.target.closest("[data-say]");
       if (say) { var a = log[+say.dataset.say]; if (a) speakIn(a.dst, a.to); return; }
       var big = e.target.closest("[data-big]");
@@ -1995,6 +2020,44 @@
       if (again) { var d = log[+again.dataset.retry]; if (d) run(d); return; }
     });
     input.addEventListener("keydown", function (e) { if (e.key === "Enter") sendTyped(); });
+
+    /* 꾹 누르고 있는 동안 듣고, 손을 떼면 멈춘다 */
+    var holdAt = 0;
+    function bindHold(btn, which) {
+      function press(e) {
+        if (e.button !== undefined && e.button !== 0) return;
+        e.preventDefault();
+        if (listening) return;
+        holdAt = Date.now();
+        if (btn.setPointerCapture && e.pointerId !== undefined) {
+          try { btn.setPointerCapture(e.pointerId); } catch (err) {}
+        }
+        startMic(which);
+      }
+      function release(e) {
+        if (listening !== which) return;
+        if (e) e.preventDefault();
+        var held = Date.now() - holdAt;
+        if (held < 400) { cancelMic(); toast(t("transHold")); return; }
+        stopMic();
+      }
+      if (window.PointerEvent) {
+        btn.addEventListener("pointerdown", press);
+        btn.addEventListener("pointerup", release);
+        btn.addEventListener("pointercancel", release);
+      } else {
+        btn.addEventListener("touchstart", press);
+        btn.addEventListener("touchend", release);
+        btn.addEventListener("touchcancel", release);
+        btn.addEventListener("mousedown", press);
+        btn.addEventListener("mouseup", release);
+        btn.addEventListener("mouseleave", release);
+      }
+      btn.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+    }
+    bindHold(micMe, "me");
+    bindHold(micYou, "you");
+
     document.addEventListener("keydown", onKey);
 
     drawButtons();
