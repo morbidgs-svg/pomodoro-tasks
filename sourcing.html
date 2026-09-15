@@ -481,12 +481,13 @@
     width: 100%; max-width: 320px; text-align: center;
   }
   .dialog p { margin: 0 0 18px; font-size: 15px; line-height: 1.5; white-space: pre-line; }
+  .dialog .input { margin-bottom: 14px; font-size: 14px; }
   .dialog .btns { display: flex; gap: 8px; }
   .dialog button {
     flex: 1; border-radius: 12px; padding: 12px; font-size: 15px; font-weight: 600;
     border: 1px solid var(--border); background: var(--bg); color: var(--text);
   }
-  .dialog button.danger { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .dialog button.danger, .dialog button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 
   .viewer { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,0.92); display: flex; }
   .viewer img { margin: auto; max-width: 100%; max-height: 100%; }
@@ -858,6 +859,9 @@
       talkSet: function (n) { return "이제 " + n + "로 물어봐요"; },
       searchAria: "업체 검색", menuSearch: "🔍 업체 검색",
       menuTalk: "🎤 대화 번역", transListening: "듣는 중…",
+      menuTransServer: "🌐 번역 서버 바꾸기",
+      transServerAsk: "번역 서버 주소를 넣으면 그 서버로 번역합니다.\n비워두면 기본 번역을 씁니다.",
+      transServerSaved: "번역 서버를 저장했어요", okBtn: "확인",
       transEmpty: "아래 🎤 를 꾹 누른 채로 말하세요.\n손을 떼면 번역해서 보여줍니다.",
       transHold: "🎤 를 꾹 누른 채로 말하세요",
       transTyping: "직접 입력", transSend: "번역", transClear: "지우기",
@@ -959,6 +963,9 @@
       talkSet: function (n) { return "Now asking in " + n; },
       searchAria: "Search vendors", menuSearch: "🔍 Search vendors",
       menuTalk: "🎤 Live translation", transListening: "Listening…",
+      menuTransServer: "🌐 Translation server",
+      transServerAsk: "Paste your translation server URL.\nLeave it empty to use the default.",
+      transServerSaved: "Translation server saved", okBtn: "OK",
       transEmpty: "Hold 🎤 below while you speak.\nRelease and it translates.",
       transHold: "Hold 🎤 down while you speak",
       transTyping: "Type instead", transSend: "Translate", transClear: "Clear",
@@ -1060,6 +1067,9 @@
       talkSet: function (n) { return "これからは" + n + "で聞きます"; },
       searchAria: "業者を検索", menuSearch: "🔍 業者を検索",
       menuTalk: "🎤 会話翻訳", transListening: "聞いています…",
+      menuTransServer: "🌐 翻訳サーバーの変更",
+      transServerAsk: "翻訳サーバーのアドレスを入れると、そこで翻訳します。\n空欄なら標準の翻訳を使います。",
+      transServerSaved: "翻訳サーバーを保存しました", okBtn: "OK",
       transEmpty: "下の 🎤 を押したまま話してください。\n離すと翻訳します。",
       transHold: "🎤 を押したまま話してください",
       transTyping: "直接入力", transSend: "翻訳", transClear: "消す",
@@ -1161,6 +1171,9 @@
       talkSet: function (n) { return "Bây giờ hỏi bằng " + n; },
       searchAria: "Tìm nhà cung cấp", menuSearch: "🔍 Tìm nhà cung cấp",
       menuTalk: "🎤 Dịch hội thoại", transListening: "Đang nghe…",
+      menuTransServer: "🌐 Máy chủ dịch",
+      transServerAsk: "Dán địa chỉ máy chủ dịch của bạn.\nĐể trống sẽ dùng bản dịch mặc định.",
+      transServerSaved: "Đã lưu máy chủ dịch", okBtn: "OK",
       transEmpty: "Giữ 🎤 bên dưới trong khi nói.\nThả tay ra là dịch ngay.",
       transHold: "Giữ 🎤 trong khi nói",
       transTyping: "Gõ trực tiếp", transSend: "Dịch", transClear: "Xoá",
@@ -1262,6 +1275,9 @@
       talkSet: function (n) { return "现在用" + n + "询问"; },
       searchAria: "搜索商家", menuSearch: "🔍 搜索商家",
       menuTalk: "🎤 对话翻译", transListening: "正在听…",
+      menuTransServer: "🌐 更换翻译服务器",
+      transServerAsk: "填入你的翻译服务器地址，就会用它来翻译。\n留空则使用默认翻译。",
+      transServerSaved: "已保存翻译服务器", okBtn: "确定",
       transEmpty: "按住下面的 🎤 说话。\n松手就会翻译。",
       transHold: "请按住 🎤 不放再说话",
       transTyping: "直接输入", transSend: "翻译", transClear: "清空",
@@ -1391,6 +1407,32 @@
     el.classList.add("show");
     clearTimeout(toastTimer);
     toastTimer = setTimeout(function () { el.classList.remove("show"); }, 1800);
+  }
+
+  function askText(message, value, placeholder) {
+    return new Promise(function (resolve) {
+      var back = document.createElement("div");
+      back.className = "backdrop center over";
+      back.innerHTML =
+        '<div class="dialog"><p>' + esc(message) + '</p>' +
+        '<input class="input" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="' +
+          esc(placeholder || "") + '" value="' + esc(value || "") + '">' +
+        '<div class="btns">' +
+        '<button data-r="0">' + esc(t("cancel")) + '</button>' +
+        '<button class="primary" data-r="1">' + esc(t("okBtn")) + '</button>' +
+        '</div></div>';
+      var input = back.querySelector("input");
+      back.addEventListener("click", function (e) {
+        var btn = e.target.closest("button[data-r]");
+        if (btn) { back.remove(); resolve(btn.dataset.r === "1" ? input.value.trim() : null); return; }
+        if (e.target === back) { back.remove(); resolve(null); }
+      });
+      input.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") { back.remove(); resolve(input.value.trim()); }
+      });
+      document.body.appendChild(back);
+      setTimeout(function () { input.focus(); }, 50);
+    });
   }
 
   function confirmDialog(message, okLabel) {
@@ -1806,20 +1848,49 @@
     });
   }
 
-  function webTranslate(text, from, to) {
-    var url;
-    if (TRANS_ENDPOINT) {
-      url = TRANS_ENDPOINT + (TRANS_ENDPOINT.indexOf("?") > -1 ? "&" : "?") +
-        "q=" + encodeURIComponent(text) + "&source=" + encodeURIComponent(from) + "&target=" + encodeURIComponent(to);
-    } else {
-      url = "https://api.mymemory.translated.net/get?q=" + encodeURIComponent(text) +
-        "&langpair=" + encodeURIComponent((MM_LANG[from] || from) + "|" + (MM_LANG[to] || to));
-    }
+  function grab(url) {
     return fetch(url).then(function (r) {
       if (!r.ok) throw new Error("http " + r.status);
       return r.json();
-    }).then(function (d) {
-      var out = (d && d.responseData && d.responseData.translatedText) || (d && d.translatedText) || "";
+    });
+  }
+
+  /* 내 번역 서버 (주소를 넣어두면 여기부터 쓴다) */
+  function myServerTranslate(text, from, to) {
+    var base = (state && state.transUrl) || TRANS_ENDPOINT;
+    if (!base) return Promise.reject(new Error("no-server"));
+    var url = base + (base.indexOf("?") > -1 ? "&" : "?") +
+      "q=" + encodeURIComponent(text) + "&source=" + encodeURIComponent(from) + "&target=" + encodeURIComponent(to);
+    return grab(url).then(function (d) {
+      var out = (d && (d.translatedText || d.translation || d.text)) || "";
+      if (!out && d && d.data && d.data.translations && d.data.translations[0]) out = d.data.translations[0].translatedText;
+      if (!out) throw new Error("bad");
+      return out;
+    });
+  }
+
+  /* 구글 번역 — 무료 번역 중에는 품질이 제일 낫다 */
+  function googleTranslate(text, from, to) {
+    var url = "https://translate.googleapis.com/translate_a/single?client=gtx&dt=t" +
+      "&sl=" + encodeURIComponent(MM_LANG[from] || from) +
+      "&tl=" + encodeURIComponent(MM_LANG[to] || to) +
+      "&q=" + encodeURIComponent(text);
+    return grab(url).then(function (d) {
+      if (!d || !d[0] || !d[0].length) throw new Error("bad");
+      var out = "";
+      for (var i = 0; i < d[0].length; i++) {
+        if (d[0][i] && d[0][i][0]) out += d[0][i][0];
+      }
+      if (!out) throw new Error("empty");
+      return out;
+    });
+  }
+
+  function memoryTranslate(text, from, to) {
+    var url = "https://api.mymemory.translated.net/get?q=" + encodeURIComponent(text) +
+      "&langpair=" + encodeURIComponent((MM_LANG[from] || from) + "|" + (MM_LANG[to] || to));
+    return grab(url).then(function (d) {
+      var out = (d && d.responseData && d.responseData.translatedText) || "";
       /* 한도를 넘기면 번역문 자리에 경고문이 온다 */
       if (!out || /MYMEMORY WARNING|QUERY LENGTH|INVALID|PLEASE SELECT/i.test(out)) throw new Error("bad");
       return out;
@@ -1832,12 +1903,21 @@
     if (from === to) return Promise.resolve(text);
     var key = from + ">" + to + ">" + text;
     if (transCache[key]) return Promise.resolve(transCache[key]);
-    return builtinTranslate(text, from, to)["catch"](function () {
-      if (navigator.onLine === false) throw new Error("offline");
-      return withTimeout(webTranslate(text, from, to), 10000);
-    }).then(function (out) {
-      out = String(out || "").trim();
-      if (!out) throw new Error("empty");
+    /* 잘 되는 번역기를 차례로 시도한다. 인터넷이 없으면 폰에 깔린 번역팩만 */
+    var chain = [];
+    if ((state && state.transUrl) || TRANS_ENDPOINT) chain.push(myServerTranslate);
+    if (navigator.onLine !== false) { chain.push(googleTranslate); chain.push(memoryTranslate); }
+    chain.push(builtinTranslate);
+
+    var step = function (i) {
+      if (i >= chain.length) return Promise.reject(new Error(navigator.onLine === false ? "offline" : "fail"));
+      return withTimeout(chain[i](text, from, to), 10000).then(function (out) {
+        out = String(out || "").trim();
+        if (!out) throw new Error("empty");
+        return out;
+      })["catch"](function () { return step(i + 1); });
+    };
+    return step(0).then(function (out) {
       transCache[key] = out;
       return out;
     });
@@ -2714,6 +2794,7 @@
       '<button class="sheet-item" data-act="backup"><span class="grow">' + esc(t("menuBackup")) + '</span></button>' +
       '<button class="sheet-item" data-act="restore"><span class="grow">' + esc(t("menuRestore")) + '</span></button>' +
       '<button class="sheet-item" data-act="lang"><span class="grow">' + esc(t("menuLang")) + '</span></button>' +
+      '<button class="sheet-item" data-act="transServer"><span class="grow">' + esc(t("menuTransServer")) + '</span></button>' +
       '</div>';
 
     back.addEventListener("click", function (e) {
@@ -2741,6 +2822,14 @@
       state.markets.push(newMarket());
       goToMarket(state.markets.length - 1);
       toast(t("marketAdded"));
+    } else if (act === "transServer") {
+      askText(t("transServerAsk"), state.transUrl || "", "https://...").then(function (url) {
+        if (url === null) return;
+        state.transUrl = url;
+        transCache = {};
+        save();
+        toast(t("transServerSaved"));
+      });
     } else if (act === "talk") {
       openTranslator();
     } else if (act === "search") {
