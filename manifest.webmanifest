@@ -1,0 +1,18 @@
+{
+  "name": "소싱 노트 · Sourcing Note",
+  "short_name": "소싱노트",
+  "description": "시장에서 업체와 물건을 사진·가격·메모로 기록하고 엑셀로 내보내는 노트",
+  "start_url": "sourcing.html",
+  "scope": "./",
+  "id": "sourcing-note",
+  "display": "standalone",
+  "background_color": "#f5f3ef",
+  "theme_color": "#f5f3ef",
+  "lang": "ko",
+  "dir": "ltr",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

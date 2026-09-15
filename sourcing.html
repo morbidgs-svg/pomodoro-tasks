@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#f5f3ef">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="소싱노트">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png" type="image/png">
 <title>아이템 소싱 노트</title>
 <style>
   :root {
@@ -906,6 +912,11 @@
       talkSet: function (n) { return "이제 " + n + "로 물어봐요"; },
       searchAria: "업체 검색", menuSearch: "🔍 업체 검색",
       menuTalk: "🎤 대화 번역", transListening: "듣는 중…",
+      menuInstall: "📲 홈 화면에 추가",
+      installIos: "사파리 아래쪽 공유 버튼 → \"홈 화면에 추가\" 를 누르면\n앱처럼 쓸 수 있어요.",
+      installOther: "브라우저 메뉴(⋮) → \"홈 화면에 추가\" 를 누르면\n앱처럼 쓸 수 있어요.",
+      installDone: "홈 화면에 추가했어요", offlineReady: "이제 인터넷 없이도 열려요",
+      updateReady: "새 버전이 있어요 · 새로고침하면 적용돼요",
       menuMap: "🗺 지도 · 길 기록",
       trackStart: "길 기록 시작", trackStop: "■ 기록 중", trackHere: "📍 여기", trackPill: "길 기록 중",
       trackOn: "길을 기록합니다", trackOff: "기록을 멈췄어요",
@@ -1022,6 +1033,11 @@
       talkSet: function (n) { return "Now asking in " + n; },
       searchAria: "Search vendors", menuSearch: "🔍 Search vendors",
       menuTalk: "🎤 Live translation", transListening: "Listening…",
+      menuInstall: "📲 Add to home screen",
+      installIos: "Tap the share button in Safari, then\n\"Add to Home Screen\" to use it like an app.",
+      installOther: "Open the browser menu (⋮), then\n\"Add to Home screen\" to use it like an app.",
+      installDone: "Added to your home screen", offlineReady: "It now opens without internet",
+      updateReady: "New version ready · refresh to apply",
       menuMap: "🗺 Map · Track",
       trackStart: "Start tracking", trackStop: "■ Tracking", trackHere: "📍 Here", trackPill: "Tracking",
       trackOn: "Tracking your walk", trackOff: "Tracking stopped",
@@ -1138,6 +1154,11 @@
       talkSet: function (n) { return "これからは" + n + "で聞きます"; },
       searchAria: "業者を検索", menuSearch: "🔍 業者を検索",
       menuTalk: "🎤 会話翻訳", transListening: "聞いています…",
+      menuInstall: "📲 ホーム画面に追加",
+      installIos: "Safari 下部の共有ボタン →「ホーム画面に追加」で\nアプリのように使えます。",
+      installOther: "ブラウザのメニュー（⋮）→「ホーム画面に追加」で\nアプリのように使えます。",
+      installDone: "ホーム画面に追加しました", offlineReady: "これでオフラインでも開きます",
+      updateReady: "新しいバージョンがあります · 再読み込みで反映",
       menuMap: "🗺 地図・足あと",
       trackStart: "足あと記録", trackStop: "■ 記録中", trackHere: "📍 ここ", trackPill: "記録中",
       trackOn: "歩いた道を記録します", trackOff: "記録を止めました",
@@ -1254,6 +1275,11 @@
       talkSet: function (n) { return "Bây giờ hỏi bằng " + n; },
       searchAria: "Tìm nhà cung cấp", menuSearch: "🔍 Tìm nhà cung cấp",
       menuTalk: "🎤 Dịch hội thoại", transListening: "Đang nghe…",
+      menuInstall: "📲 Thêm vào màn hình chính",
+      installIos: "Nhấn nút chia sẻ trong Safari →\n\"Thêm vào MH chính\" để dùng như một ứng dụng.",
+      installOther: "Mở menu trình duyệt (⋮) →\n\"Thêm vào màn hình chính\" để dùng như ứng dụng.",
+      installDone: "Đã thêm vào màn hình chính", offlineReady: "Giờ mở được cả khi không có mạng",
+      updateReady: "Có bản mới · tải lại để áp dụng",
       menuMap: "🗺 Bản đồ · Lộ trình",
       trackStart: "Bắt đầu ghi", trackStop: "■ Đang ghi", trackHere: "📍 Ở đây", trackPill: "Đang ghi",
       trackOn: "Đang ghi lộ trình", trackOff: "Đã dừng ghi",
@@ -1370,6 +1396,11 @@
       talkSet: function (n) { return "现在用" + n + "询问"; },
       searchAria: "搜索商家", menuSearch: "🔍 搜索商家",
       menuTalk: "🎤 对话翻译", transListening: "正在听…",
+      menuInstall: "📲 添加到主屏幕",
+      installIos: "点 Safari 下方的分享按钮 →「添加到主屏幕」\n就能像 App 一样使用。",
+      installOther: "打开浏览器菜单（⋮）→「添加到主屏幕」\n就能像 App 一样使用。",
+      installDone: "已添加到主屏幕", offlineReady: "现在没有网络也能打开",
+      updateReady: "有新版本 · 刷新后生效",
       menuMap: "🗺 地图 · 路线",
       trackStart: "开始记录", trackStop: "■ 记录中", trackHere: "📍 这里", trackPill: "记录中",
       trackOn: "正在记录走过的路", trackOff: "已停止记录",
@@ -3253,6 +3284,66 @@
     }
   }
 
+
+  /* ────────── 앱처럼 쓰기 (홈 화면 추가 · 오프라인) ────────── */
+  var installPrompt = null;
+  var swReg = null;
+
+  function standalone() {
+    return (window.matchMedia && matchMedia("(display-mode: standalone)").matches) ||
+           navigator.standalone === true;
+  }
+  function isIos() { return /iPad|iPhone|iPod/.test(navigator.userAgent || ""); }
+  function canInstall() { return !standalone(); }
+
+  function doInstall() {
+    if (installPrompt) {
+      var p = installPrompt;
+      installPrompt = null;
+      p.prompt();
+      if (p.userChoice && p.userChoice.then) {
+        p.userChoice.then(function (r) {
+          if (r && r.outcome === "accepted") toast(t("installDone"));
+        });
+      }
+      return;
+    }
+    confirmDialog(isIos() ? t("installIos") : t("installOther"), t("okBtn"));
+  }
+
+  window.addEventListener("beforeinstallprompt", function (e) {
+    e.preventDefault();
+    installPrompt = e;
+  });
+  window.addEventListener("appinstalled", function () {
+    installPrompt = null;
+    toast(t("installDone"));
+  });
+
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js").then(function (reg) {
+        swReg = reg;
+        /* 처음 담아두기가 끝나면 한 번만 알려준다 */
+        if (!navigator.serviceWorker.controller) {
+          navigator.serviceWorker.addEventListener("controllerchange", function () {
+            if (!sessionStorage.getItem("offline-told")) {
+              try { sessionStorage.setItem("offline-told", "1"); } catch (e) {}
+              toast(t("offlineReady"));
+            }
+          });
+        }
+        reg.addEventListener("updatefound", function () {
+          var sw = reg.installing;
+          if (!sw) return;
+          sw.addEventListener("statechange", function () {
+            if (sw.state === "installed" && navigator.serviceWorker.controller) toast(t("updateReady"));
+          });
+        });
+      })["catch"](function () {});
+    });
+  }
+
   /* ────────── 메뉴 ────────── */
   document.getElementById("menuBtn").addEventListener("click", function () {
     var marketList = state.markets.map(function (m, i) {
@@ -3289,6 +3380,7 @@
       '<button class="sheet-item" data-act="backup"><span class="grow">' + esc(t("menuBackup")) + '</span></button>' +
       '<button class="sheet-item" data-act="restore"><span class="grow">' + esc(t("menuRestore")) + '</span></button>' +
       '<button class="sheet-item" data-act="lang"><span class="grow">' + esc(t("menuLang")) + '</span></button>' +
+      (canInstall() ? '<button class="sheet-item" data-act="install"><span class="grow">' + esc(t("menuInstall")) + '</span></button>' : "") +
       '<button class="sheet-item" data-act="transServer"><span class="grow">' + esc(t("menuTransServer")) + '</span></button>' +
       '</div>';
 
@@ -3325,6 +3417,8 @@
         save();
         toast(t("transServerSaved"));
       });
+    } else if (act === "install") {
+      doInstall();
     } else if (act === "map") {
       openMap();
     } else if (act === "talk") {
