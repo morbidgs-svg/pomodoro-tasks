@@ -354,6 +354,16 @@
     background: var(--bg); display: flex; flex-direction: column;
   }
   /* ── 동그란 번역 버튼 ── */
+  .track-pill {
+    position: fixed; left: 14px; bottom: calc(80px + var(--safe-b)); z-index: 30;
+    display: flex; align-items: center; gap: 7px;
+    border: 1px solid var(--accent); background: var(--card); color: var(--accent);
+    border-radius: 999px; padding: 10px 14px; font-size: 13px; font-weight: 700;
+    box-shadow: var(--shadow);
+  }
+  .track-pill i { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: micPulse 1.6s infinite; }
+  body.has-overlay .track-pill { display: none; }
+
   .fab {
     position: fixed; right: 16px; bottom: calc(78px + var(--safe-b)); z-index: 30;
     width: 62px; height: 62px; border-radius: 50%;
@@ -371,6 +381,42 @@
   body.trans-open .fab { z-index: 65; background: var(--text); font-size: 24px; }
   /* 검색처럼 다른 전체 화면에서는 숨긴다 */
   body.has-overlay:not(.trans-open) .fab { display: none; }
+
+  /* ── 지도 · 길 기록 ── */
+  .map-back { position: fixed; inset: 0; z-index: 60; background: var(--bg); display: flex; flex-direction: column; }
+  .map-bar {
+    flex: none; display: flex; align-items: center; gap: 8px;
+    padding: calc(10px + env(safe-area-inset-top, 0px)) 14px 10px;
+    background: var(--card); border-bottom: 1px solid var(--border);
+  }
+  .map-bar .mini {
+    flex: none; border: 1px solid var(--border); background: var(--bg); color: var(--muted);
+    border-radius: 11px; padding: 10px 12px; font-size: 13px; font-weight: 600;
+    position: relative;
+  }
+  .map-bar .mini::after { content: ""; position: absolute; inset: -8px -6px; }
+  .map-title { flex: 1; min-width: 0; text-align: center; font-size: 15px; font-weight: 700;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .map-wrap { flex: 1; position: relative; overflow: hidden; }
+  .map-wrap canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+  .map-msg {
+    position: absolute; left: 14px; right: 14px; top: 50%; transform: translateY(-50%);
+    text-align: center; color: var(--muted); font-size: 14px; line-height: 1.8; white-space: pre-line;
+  }
+  .map-note {
+    position: absolute; left: 10px; right: 10px; bottom: 8px;
+    text-align: center; font-size: 11px; color: var(--muted);
+  }
+  .map-foot {
+    flex: none; display: flex; gap: 8px; padding: 10px 14px calc(12px + var(--safe-b));
+    background: var(--card); border-top: 1px solid var(--border);
+  }
+  .map-foot button {
+    flex: 1; min-width: 0; border: 1px solid var(--border); background: var(--bg); color: var(--text);
+    border-radius: 13px; padding: 13px 6px; font-size: 14px; font-weight: 700;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .map-foot button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 
   /* ── 대화 번역 ── */
   .trans-back { position: fixed; inset: 0; z-index: 60; background: var(--bg); display: flex; flex-direction: column; }
@@ -520,6 +566,7 @@
 
 <main class="wrap" id="page"></main>
 
+<button class="track-pill hidden" id="trackPill"><i></i><span>길 기록 중</span></button>
 <button class="fab" id="transBtn" aria-label="대화 번역">🎤</button>
 
 <nav class="bottombar">
@@ -859,6 +906,18 @@
       talkSet: function (n) { return "이제 " + n + "로 물어봐요"; },
       searchAria: "업체 검색", menuSearch: "🔍 업체 검색",
       menuTalk: "🎤 대화 번역", transListening: "듣는 중…",
+      menuMap: "🗺 지도 · 길 기록",
+      trackStart: "길 기록 시작", trackStop: "■ 기록 중", trackHere: "📍 여기", trackPill: "길 기록 중",
+      trackOn: "길을 기록합니다", trackOff: "기록을 멈췄어요",
+      geoDenied: "위치 권한을 켜주세요", geoNo: "이 기기는 위치를 알 수 없어요",
+      geoWait: "위치를 찾는 중…",
+      mapEmpty: "아직 기록된 위치가 없어요.\n아래 '길 기록 시작'을 눌러보세요.",
+      mapHereDone: "이 업체 위치를 저장했어요",
+      mapOpen: "🧭 지도앱", mapClear: "길 지우기",
+      mapClearAsk: "기록한 길을 지울까요?\n업체 위치는 그대로 남습니다.",
+      mapIndoor: "실내에서는 위치가 10~50m 어긋날 수 있어요",
+      mapMe: "나", mapDirs: ["북", "북동", "동", "남동", "남", "남서", "서", "북서"],
+      mapDist: function (d, dir) { return dir + " " + d; },
       menuTransServer: "🌐 번역 서버 바꾸기",
       transServerAsk: "번역 서버 주소를 넣으면 그 서버로 번역합니다.\n비워두면 기본 번역을 씁니다.",
       transServerSaved: "번역 서버를 저장했어요", okBtn: "확인",
@@ -963,6 +1022,18 @@
       talkSet: function (n) { return "Now asking in " + n; },
       searchAria: "Search vendors", menuSearch: "🔍 Search vendors",
       menuTalk: "🎤 Live translation", transListening: "Listening…",
+      menuMap: "🗺 Map · Track",
+      trackStart: "Start tracking", trackStop: "■ Tracking", trackHere: "📍 Here", trackPill: "Tracking",
+      trackOn: "Tracking your walk", trackOff: "Tracking stopped",
+      geoDenied: "Please allow location access", geoNo: "This device can't get a location",
+      geoWait: "Finding your location…",
+      mapEmpty: "Nothing recorded yet.\nTap 'Start tracking' below.",
+      mapHereDone: "Vendor location saved",
+      mapOpen: "🧭 Map app", mapClear: "Clear track",
+      mapClearAsk: "Clear the recorded track?\nVendor pins stay.",
+      mapIndoor: "Indoors the position can be off by 10-50m",
+      mapMe: "me", mapDirs: ["N", "NE", "E", "SE", "S", "SW", "W", "NW"],
+      mapDist: function (d, dir) { return d + " " + dir; },
       menuTransServer: "🌐 Translation server",
       transServerAsk: "Paste your translation server URL.\nLeave it empty to use the default.",
       transServerSaved: "Translation server saved", okBtn: "OK",
@@ -1067,6 +1138,18 @@
       talkSet: function (n) { return "これからは" + n + "で聞きます"; },
       searchAria: "業者を検索", menuSearch: "🔍 業者を検索",
       menuTalk: "🎤 会話翻訳", transListening: "聞いています…",
+      menuMap: "🗺 地図・足あと",
+      trackStart: "足あと記録", trackStop: "■ 記録中", trackHere: "📍 ここ", trackPill: "記録中",
+      trackOn: "歩いた道を記録します", trackOff: "記録を止めました",
+      geoDenied: "位置情報を許可してください", geoNo: "この端末では位置が取れません",
+      geoWait: "現在地を探しています…",
+      mapEmpty: "まだ記録がありません。\n下の「足あと記録」を押してください。",
+      mapHereDone: "業者の位置を保存しました",
+      mapOpen: "🧭 地図アプリ", mapClear: "足あと消去",
+      mapClearAsk: "記録した足あとを消しますか？\n業者の位置は残ります。",
+      mapIndoor: "屋内では位置が10〜50mずれることがあります",
+      mapMe: "現在地", mapDirs: ["北", "北東", "東", "南東", "南", "南西", "西", "北西"],
+      mapDist: function (d, dir) { return dir + " " + d; },
       menuTransServer: "🌐 翻訳サーバーの変更",
       transServerAsk: "翻訳サーバーのアドレスを入れると、そこで翻訳します。\n空欄なら標準の翻訳を使います。",
       transServerSaved: "翻訳サーバーを保存しました", okBtn: "OK",
@@ -1171,6 +1254,18 @@
       talkSet: function (n) { return "Bây giờ hỏi bằng " + n; },
       searchAria: "Tìm nhà cung cấp", menuSearch: "🔍 Tìm nhà cung cấp",
       menuTalk: "🎤 Dịch hội thoại", transListening: "Đang nghe…",
+      menuMap: "🗺 Bản đồ · Lộ trình",
+      trackStart: "Bắt đầu ghi", trackStop: "■ Đang ghi", trackHere: "📍 Ở đây", trackPill: "Đang ghi",
+      trackOn: "Đang ghi lộ trình", trackOff: "Đã dừng ghi",
+      geoDenied: "Hãy cho phép truy cập vị trí", geoNo: "Máy này không lấy được vị trí",
+      geoWait: "Đang tìm vị trí…",
+      mapEmpty: "Chưa ghi được gì.\nNhấn 'Bắt đầu ghi' bên dưới.",
+      mapHereDone: "Đã lưu vị trí nhà cung cấp",
+      mapOpen: "🧭 Bản đồ", mapClear: "Xoá lộ trình",
+      mapClearAsk: "Xoá lộ trình đã ghi?\nVị trí nhà cung cấp vẫn giữ.",
+      mapIndoor: "Trong nhà vị trí có thể lệch 10-50m",
+      mapMe: "tôi", mapDirs: ["Bắc", "Đông Bắc", "Đông", "Đông Nam", "Nam", "Tây Nam", "Tây", "Tây Bắc"],
+      mapDist: function (d, dir) { return d + " " + dir; },
       menuTransServer: "🌐 Máy chủ dịch",
       transServerAsk: "Dán địa chỉ máy chủ dịch của bạn.\nĐể trống sẽ dùng bản dịch mặc định.",
       transServerSaved: "Đã lưu máy chủ dịch", okBtn: "OK",
@@ -1275,6 +1370,18 @@
       talkSet: function (n) { return "现在用" + n + "询问"; },
       searchAria: "搜索商家", menuSearch: "🔍 搜索商家",
       menuTalk: "🎤 对话翻译", transListening: "正在听…",
+      menuMap: "🗺 地图 · 路线",
+      trackStart: "开始记录", trackStop: "■ 记录中", trackHere: "📍 这里", trackPill: "记录中",
+      trackOn: "正在记录走过的路", trackOff: "已停止记录",
+      geoDenied: "请允许获取位置", geoNo: "这台设备无法获取位置",
+      geoWait: "正在定位…",
+      mapEmpty: "还没有记录。\n点下面的「开始记录」。",
+      mapHereDone: "已保存商家位置",
+      mapOpen: "🧭 地图App", mapClear: "清除路线",
+      mapClearAsk: "要清除记录的路线吗？\n商家位置会保留。",
+      mapIndoor: "室内定位可能有 10~50 米误差",
+      mapMe: "我", mapDirs: ["北", "东北", "东", "东南", "南", "西南", "西", "西北"],
+      mapDist: function (d, dir) { return dir + " " + d; },
       menuTransServer: "🌐 更换翻译服务器",
       transServerAsk: "填入你的翻译服务器地址，就会用它来翻译。\n留空则使用默认翻译。",
       transServerSaved: "已保存翻译服务器", okBtn: "确定",
@@ -1350,6 +1457,7 @@
     document.getElementById("phraseBtn").setAttribute("aria-label", t("phraseAria", talkName()));
     document.getElementById("searchBtn").setAttribute("aria-label", t("searchAria"));
     document.getElementById("transBtn").setAttribute("aria-label", t("menuTalk"));
+    if (typeof paintTrackPill === "function") paintTrackPill();
     document.getElementById("addVendorBtn").textContent = t("addVendor");
     var prev = document.querySelector('[data-nav="prev"]');
     var next = document.querySelector('[data-nav="next"]');
@@ -2569,6 +2677,11 @@
     vendors().push(newVendor(vendor().currency));
     goTo(vendors().length - 1);
     toast(t("vendorAdded"));
+    /* 길을 기록하는 중이면 새 업체 자리도 같이 남겨둔다 */
+    if (tracking() && geoLast && Date.now() - geoLast.t < 60000) {
+      stampVendor(vendor(), geoLast);
+      save();
+    }
   }
 
   document.querySelector(".bottombar").addEventListener("click", function (e) {
@@ -2759,6 +2872,387 @@
     input.focus();
   }
 
+
+  /* ────────── 위치 · 지나온 길 ────────── */
+  /* 시장 건물 안에서는 GPS 오차가 커서(10~50m) 정확한 통로까지는 못 잡는다.
+     "건물 어느 쪽이었나, 어디까지 돌았나" 정도로 쓰는 기능이다. */
+  var TRACK_MAX = 3000;
+  var geoWatchId = null;
+  var geoLast = null;
+  var geoOnMove = null;
+
+  function geoOk() { return !!(navigator.geolocation && navigator.geolocation.getCurrentPosition); }
+  function geoMsg(err) { return (err && err.code === 1) ? t("geoDenied") : t("geoNo"); }
+  function toPos(p) {
+    return { lat: p.coords.latitude, lng: p.coords.longitude, acc: Math.round(p.coords.accuracy || 0), t: Date.now() };
+  }
+  function geoOnce() {
+    return new Promise(function (resolve, reject) {
+      if (!geoOk()) { reject(null); return; }
+      navigator.geolocation.getCurrentPosition(function (p) {
+        geoLast = toPos(p);
+        resolve(geoLast);
+      }, reject, { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 });
+    });
+  }
+
+  function metersBetween(a, b) {
+    var R = 6371000, rad = Math.PI / 180;
+    var dLat = (b.lat - a.lat) * rad, dLng = (b.lng - a.lng) * rad;
+    var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+  }
+  function bearingOf(a, b) {
+    var rad = Math.PI / 180;
+    var y = Math.sin((b.lng - a.lng) * rad) * Math.cos(b.lat * rad);
+    var x = Math.cos(a.lat * rad) * Math.sin(b.lat * rad) -
+            Math.sin(a.lat * rad) * Math.cos(b.lat * rad) * Math.cos((b.lng - a.lng) * rad);
+    return (Math.atan2(y, x) / rad + 360) % 360;
+  }
+  function distText(m) { return m < 1000 ? Math.round(m) + "m" : (m / 1000).toFixed(1) + "km"; }
+  function dirText(deg) {
+    var dirs = t("mapDirs");
+    return dirs[Math.round(deg / 45) % 8];
+  }
+
+  function trackPush(pos) {
+    var m = market();
+    if (!m) return false;
+    if (!Array.isArray(m.track)) m.track = [];
+    var last = m.track[m.track.length - 1];
+    /* 제자리에 서 있을 때는 점을 쌓지 않는다 */
+    if (last && metersBetween({ lat: last[1], lng: last[2] }, pos) < 4 && pos.t - last[0] < 15000) return false;
+    m.track.push([pos.t, +pos.lat.toFixed(6), +pos.lng.toFixed(6), pos.acc]);
+    if (m.track.length > TRACK_MAX) m.track.splice(0, m.track.length - TRACK_MAX);
+    save();
+    return true;
+  }
+
+  function tracking() { return geoWatchId !== null; }
+  function paintTrackPill() {
+    var pill = document.getElementById("trackPill");
+    if (!pill) return;
+    pill.querySelector("span").textContent = t("trackPill");
+    pill.classList.toggle("hidden", !tracking());
+  }
+  function trackStop() {
+    if (geoWatchId !== null) {
+      try { navigator.geolocation.clearWatch(geoWatchId); } catch (e) {}
+    }
+    geoWatchId = null;
+    paintTrackPill();
+  }
+  function trackStart() {
+    if (!geoOk()) { toast(t("geoNo")); return false; }
+    if (tracking()) return true;
+    geoWatchId = navigator.geolocation.watchPosition(function (p) {
+      geoLast = toPos(p);
+      trackPush(geoLast);
+      if (geoOnMove) geoOnMove();
+    }, function (err) {
+      trackStop();
+      toast(geoMsg(err));
+      if (geoOnMove) geoOnMove();
+    }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 3000 });
+    paintTrackPill();
+    return true;
+  }
+
+  document.getElementById("trackPill").addEventListener("click", function () { openMap(); });
+
+  /* 새 업체를 만들 때 기록 중이면 그 자리를 같이 남겨둔다 */
+  function stampVendor(v, pos) {
+    if (!v || !pos) return;
+    v.pos = { lat: pos.lat, lng: pos.lng, acc: pos.acc, t: pos.t };
+  }
+
+  function openInMapApp(pos, label) {
+    if (!pos) return;
+    var ios = /iPad|iPhone|iPod/.test(navigator.userAgent || "");
+    var url = ios
+      ? "https://maps.apple.com/?ll=" + pos.lat + "," + pos.lng + "&q=" + encodeURIComponent(label || "")
+      : "geo:" + pos.lat + "," + pos.lng + "?q=" + pos.lat + "," + pos.lng + "(" + encodeURIComponent(label || "") + ")";
+    var a = document.createElement("a");
+    a.href = url;
+    a.target = "_blank";
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  function openMap() {
+    var back = document.createElement("div");
+    back.className = "map-back";
+    back.innerHTML =
+      '<div class="map-bar">' +
+        '<button class="mini" data-shut="1">' + esc(t("close")) + '</button>' +
+        '<div class="map-title"></div>' +
+        '<button class="mini" data-clear="1">' + esc(t("mapClear")) + '</button>' +
+      '</div>' +
+      '<div class="map-wrap"><canvas></canvas>' +
+        '<div class="map-msg" hidden></div>' +
+        '<div class="map-note">' + esc(t("mapIndoor")) + '</div>' +
+      '</div>' +
+      '<div class="map-foot">' +
+        '<button data-track="1"></button>' +
+        '<button data-here="1">' + esc(t("trackHere")) + '</button>' +
+        '<button data-open="1">' + esc(t("mapOpen")) + '</button>' +
+      '</div>';
+
+    var wrap = back.querySelector(".map-wrap");
+    var canvas = back.querySelector("canvas");
+    var msg = back.querySelector(".map-msg");
+    var title = back.querySelector(".map-title");
+    var trackBtn = back.querySelector("[data-track]");
+    var pins = [];
+
+    function paintButtons() {
+      trackBtn.textContent = tracking() ? t("trackStop") : t("trackStart");
+      trackBtn.className = tracking() ? "on" : "";
+      var m = market();
+      var v = vendor();
+      var line = marketLabel(m, state.currentMarket);
+      if (geoLast && v && v.pos) {
+        line += " · " + t("mapDist", distText(metersBetween(geoLast, v.pos)), dirText(bearingOf(geoLast, v.pos)));
+      }
+      title.textContent = line;
+    }
+
+    function draw() {
+      var m = market();
+      var dpr = window.devicePixelRatio || 1;
+      var W = wrap.clientWidth, H = wrap.clientHeight;
+      if (!W || !H) return;
+      canvas.width = Math.round(W * dpr);
+      canvas.height = Math.round(H * dpr);
+      var g = canvas.getContext("2d");
+      g.setTransform(dpr, 0, 0, dpr, 0, 0);
+      g.clearRect(0, 0, W, H);
+      pins = [];
+
+      var track = Array.isArray(m.track) ? m.track : [];
+      var spots = [];
+      m.vendors.forEach(function (v, i) { if (v.pos) spots.push({ v: v, i: i }); });
+
+      var all = track.map(function (p) { return { lat: p[1], lng: p[2] }; });
+      spots.forEach(function (sp) { all.push({ lat: sp.v.pos.lat, lng: sp.v.pos.lng }); });
+      if (geoLast) all.push(geoLast);
+      if (!all.length) {
+        msg.textContent = t("mapEmpty");
+        msg.hidden = false;
+        return;
+      }
+      msg.hidden = true;
+
+      var lat0 = 0, lng0 = 0;
+      all.forEach(function (p) { lat0 += p.lat; lng0 += p.lng; });
+      lat0 /= all.length; lng0 /= all.length;
+      var mLat = 111320, mLng = 111320 * Math.cos(lat0 * Math.PI / 180);
+      function flat(p) { return { x: (p.lng - lng0) * mLng, y: -(p.lat - lat0) * mLat }; }
+
+      var minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
+      all.forEach(function (p) {
+        var q = flat(p);
+        if (q.x < minX) minX = q.x;
+        if (q.x > maxX) maxX = q.x;
+        if (q.y < minY) minY = q.y;
+        if (q.y > maxY) maxY = q.y;
+      });
+      var span = Math.max(maxX - minX, maxY - minY, 30);        /* 너무 좁으면 최소 30m 폭 */
+      var pad = 56;
+      var scale = (Math.min(W, H) - pad * 2) / span;
+      var cx = W / 2 - ((minX + maxX) / 2) * scale;
+      var cy = H / 2 - ((minY + maxY) / 2) * scale;
+      function pt(p) { var q = flat(p); return { x: cx + q.x * scale, y: cy + q.y * scale }; }
+
+      /* 지나온 길 */
+      if (track.length > 1) {
+        g.strokeStyle = "#c9c3b8";
+        g.lineWidth = 5;
+        g.lineJoin = "round";
+        g.lineCap = "round";
+        g.beginPath();
+        track.forEach(function (p, i) {
+          var q = pt({ lat: p[1], lng: p[2] });
+          if (i === 0) g.moveTo(q.x, q.y); else g.lineTo(q.x, q.y);
+        });
+        g.stroke();
+        /* 최근 30분은 진하게 */
+        var recent = track.filter(function (p) { return Date.now() - p[0] < 1800000; });
+        if (recent.length > 1) {
+          g.strokeStyle = "#e2634f";
+          g.lineWidth = 3;
+          g.beginPath();
+          recent.forEach(function (p, i) {
+            var q = pt({ lat: p[1], lng: p[2] });
+            if (i === 0) g.moveTo(q.x, q.y); else g.lineTo(q.x, q.y);
+          });
+          g.stroke();
+        }
+      }
+
+      /* 업체 자리. GPS 오차로 여러 곳이 한 점에 겹치면 서로 살짝 밀어내 전부 보이게 한다 */
+      var placed = [];
+      function spread(q) {
+        var base = { x: q.x, y: q.y }, n = 0;
+        while (n < 14) {
+          var hit = false;
+          for (var k = 0; k < placed.length; k++) {
+            var dx = placed[k].x - q.x, dy = placed[k].y - q.y;
+            if (Math.sqrt(dx * dx + dy * dy) < 28) { hit = true; break; }
+          }
+          if (!hit) break;
+          var ang = n * 1.2;
+          var rad = 22 + n * 4;
+          q = { x: base.x + Math.cos(ang) * rad, y: base.y + Math.sin(ang) * rad };
+          n++;
+        }
+        placed.push(q);
+        return q;
+      }
+
+      spots.forEach(function (sp) {
+        var q = spread(pt(sp.v.pos));
+        var here = sp.i === state.current;
+        pins.push({ x: q.x, y: q.y, i: sp.i });
+        g.beginPath();
+        g.arc(q.x, q.y, here ? 16 : 13, 0, Math.PI * 2);
+        g.fillStyle = here ? "#e2634f" : "#ffffff";
+        g.fill();
+        g.lineWidth = 2;
+        g.strokeStyle = here ? "#e2634f" : "#8a8580";
+        g.stroke();
+        g.fillStyle = here ? "#ffffff" : "#2b2b2b";
+        g.font = "bold 13px -apple-system, system-ui, sans-serif";
+        g.textAlign = "center";
+        g.textBaseline = "middle";
+        g.fillText(String(sp.i + 1), q.x, q.y + 1);
+        var name = vendorLabel(sp.v, sp.i);
+        if (name.length > 9) name = name.slice(0, 8) + "…";
+        g.font = "600 11px -apple-system, system-ui, sans-serif";
+        g.textBaseline = "top";
+        g.lineWidth = 3;
+        g.strokeStyle = "#f5f3ef";
+        g.strokeText(name, q.x, q.y + (here ? 19 : 16));
+        g.fillStyle = "#6b6660";
+        g.fillText(name, q.x, q.y + (here ? 19 : 16));
+      });
+
+      /* 지금 내 자리 */
+      if (geoLast) {
+        var me = pt(geoLast);
+        var rAcc = Math.max(6, Math.min(geoLast.acc * scale, Math.min(W, H) / 2));
+        g.beginPath();
+        g.arc(me.x, me.y, rAcc, 0, Math.PI * 2);
+        g.fillStyle = "rgba(60,120,220,0.12)";
+        g.fill();
+        g.beginPath();
+        g.arc(me.x, me.y, 8, 0, Math.PI * 2);
+        g.fillStyle = "#3c78dc";
+        g.fill();
+        g.lineWidth = 3;
+        g.strokeStyle = "#ffffff";
+        g.stroke();
+      }
+
+      /* 축척 · 북쪽 */
+      var barM = 50, barPx = barM * scale;
+      while (barPx > W * 0.45) { barM /= 2; barPx = barM * scale; }
+      while (barPx < W * 0.15) { barM *= 2; barPx = barM * scale; }
+      g.strokeStyle = "#8a8580";
+      g.lineWidth = 2;
+      g.beginPath();
+      g.moveTo(16, H - 24); g.lineTo(16 + barPx, H - 24);
+      g.moveTo(16, H - 29); g.lineTo(16, H - 19);
+      g.moveTo(16 + barPx, H - 29); g.lineTo(16 + barPx, H - 19);
+      g.stroke();
+      g.fillStyle = "#8a8580";
+      g.font = "600 11px -apple-system, system-ui, sans-serif";
+      g.textAlign = "left";
+      g.textBaseline = "bottom";
+      g.fillText(distText(barM), 16, H - 30);
+      g.textAlign = "center";
+      g.font = "bold 13px -apple-system, system-ui, sans-serif";
+      g.fillText("N", W - 24, 30);
+      g.beginPath();
+      g.moveTo(W - 24, 12); g.lineTo(W - 29, 22); g.lineTo(W - 19, 22);
+      g.closePath();
+      g.fillStyle = "#8a8580";
+      g.fill();
+    }
+
+    function redraw() { paintButtons(); draw(); }
+
+    function close() {
+      geoOnMove = null;
+      window.removeEventListener("resize", redraw);
+      document.removeEventListener("keydown", onKey);
+      document.body.classList.remove("has-overlay");
+      back.remove();
+    }
+    function onKey(e) { if (e.key === "Escape") close(); }
+
+    back.addEventListener("click", function (e) {
+      if (e.target.closest("[data-shut]")) { close(); return; }
+      if (e.target.closest("[data-clear]")) {
+        confirmDialog(t("mapClearAsk")).then(function (ok) {
+          if (!ok) return;
+          market().track = [];
+          save();
+          redraw();
+        });
+        return;
+      }
+      if (e.target.closest("[data-track]")) {
+        if (tracking()) { trackStop(); toast(t("trackOff")); }
+        else if (trackStart()) { toast(t("trackOn")); }
+        redraw();
+        return;
+      }
+      if (e.target.closest("[data-here]")) {
+        var mark = function (pos) {
+          stampVendor(vendor(), pos);
+          trackPush(pos);
+          save();
+          toast(t("mapHereDone"));
+          redraw();
+        };
+        if (geoLast && Date.now() - geoLast.t < 20000) { mark(geoLast); return; }
+        toast(t("geoWait"));
+        geoOnce().then(mark)["catch"](function (err) { toast(geoMsg(err)); });
+        return;
+      }
+      if (e.target.closest("[data-open]")) {
+        var v = vendor();
+        var spot = (v && v.pos) || geoLast;
+        if (!spot) { toast(t("mapEmpty").split("\n")[0]); return; }
+        openInMapApp(spot, v && v.pos ? vendorLabel(v, state.current) : t("mapMe"));
+        return;
+      }
+      /* 지도에서 업체를 누르면 그 업체로 */
+      var box = canvas.getBoundingClientRect();
+      var x = e.clientX - box.left, y = e.clientY - box.top;
+      for (var i = 0; i < pins.length; i++) {
+        var d = Math.sqrt(Math.pow(pins[i].x - x, 2) + Math.pow(pins[i].y - y, 2));
+        if (d <= 24) { close(); goTo(pins[i].i); return; }
+      }
+    });
+
+    geoOnMove = redraw;
+    window.addEventListener("resize", redraw);
+    document.addEventListener("keydown", onKey);
+    document.body.classList.add("has-overlay");
+    document.body.appendChild(back);
+    redraw();
+
+    /* 기록 중이 아니어도 지금 자리는 한 번 찍어서 보여준다 */
+    if (!tracking() && geoOk()) {
+      geoOnce().then(redraw)["catch"](function () {});
+    }
+  }
+
   /* ────────── 메뉴 ────────── */
   document.getElementById("menuBtn").addEventListener("click", function () {
     var marketList = state.markets.map(function (m, i) {
@@ -2788,6 +3282,7 @@
       '<button class="sheet-item" data-act="add"><span class="grow">' + esc(t("addVendorRow")) + '</span></button>' +
       '<h3>' + esc(t("manage")) + '</h3>' +
       '<button class="sheet-item" data-act="talk"><span class="grow">' + esc(t("menuTalk")) + '</span></button>' +
+      '<button class="sheet-item" data-act="map"><span class="grow">' + esc(t("menuMap")) + '</span></button>' +
       '<button class="sheet-item" data-act="search"><span class="grow">' + esc(t("menuSearch")) + '</span></button>' +
       '<button class="sheet-item" data-act="copy"><span class="grow">' + esc(t("menuCopy")) + '</span></button>' +
       '<button class="sheet-item" data-act="excel"><span class="grow">' + esc(t("menuExcel")) + '</span></button>' +
@@ -2830,6 +3325,8 @@
         save();
         toast(t("transServerSaved"));
       });
+    } else if (act === "map") {
+      openMap();
     } else if (act === "talk") {
       openTranslator();
     } else if (act === "search") {
