@@ -484,6 +484,28 @@
     border-radius: 10px; padding: 7px 13px; font-size: 14px; font-weight: 600;
   }
   .trans-type { flex: none; display: flex; gap: 6px; padding: 0 14px 8px; }
+  .trans-type .shot {
+    flex: none; border: 1px solid var(--border); background: var(--card); color: var(--text);
+    border-radius: 11px; padding: 8px 10px; font-size: 17px; line-height: 1.2; position: relative;
+  }
+  .trans-type .shot::after { content: ""; position: absolute; inset: -7px -3px; }
+  /* 사진에서 글자 읽는 중 */
+  .ocr-wait {
+    position: fixed; inset: 0; z-index: 75; background: rgba(0,0,0,0.45);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ocr-box {
+    background: var(--card); border-radius: 18px; padding: 22px 24px;
+    text-align: center; font-size: 15px; font-weight: 600; min-width: 200px;
+  }
+  .ocr-box .bar { height: 6px; border-radius: 3px; background: var(--border); margin-top: 14px; overflow: hidden; }
+  .ocr-box .bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width 0.2s; }
+  .ocr-box .sub { font-size: 12px; color: var(--muted); font-weight: 500; margin-top: 10px; line-height: 1.5; }
+  textarea.ocr-edit {
+    width: 100%; min-height: 168px; font-size: 15px; line-height: 1.6;
+    resize: vertical; overflow: auto; text-align: left;
+  }
+  .dialog.wide { max-width: 360px; }
   .trans-type .side {
     flex: none; border: 1px solid var(--border); background: var(--card); color: var(--muted);
     border-radius: 11px; padding: 8px 10px; font-size: 13px; font-weight: 700;
@@ -618,6 +640,7 @@
 <input type="file" id="fileCamera" accept="image/*" capture="environment" class="hidden">
 <input type="file" id="fileAlbum" accept="image/*" class="hidden">
 <input type="file" id="fileRestore" accept="application/json,.json" class="hidden">
+<input type="file" id="fileOcr" accept="image/*" class="hidden">
 
 <div class="toast" id="toast"></div>
 
@@ -979,6 +1002,10 @@
       transEmpty: "아래 🎤 를 꾹 누른 채로 말하세요.\n손을 떼면 번역해서 보여줍니다.",
       transHold: "🎤 를 꾹 누른 채로 말하세요",
       transTyping: "직접 입력", transSend: "번역", transClear: "지우기",
+      ocrBtn: "사진 속 글자 번역", ocrReady: "글자 읽기 준비 중…", ocrReading: "글자 읽는 중…",
+      ocrFirst: "처음 한 번만 준비 파일을 받아요 (약 5MB)\n와이파이에서 받아두면 좋아요",
+      ocrTitle: "읽은 글자 · 틀린 곳은 고치세요", ocrNone: "사진에서 글자를 찾지 못했어요",
+      ocrGo: "번역하기",
       transFail: "번역을 못 했어요. 다시 눌러보세요.",
       transOffline: "인터넷이 없어 번역이 안 돼요. 💬 문장은 그대로 쓸 수 있어요.",
       transNoSpeech: "소리가 안 들렸어요", transDenied: "마이크 권한을 켜주세요",
@@ -1110,6 +1137,10 @@
       transEmpty: "Hold 🎤 below while you speak.\nRelease and it translates.",
       transHold: "Hold 🎤 down while you speak",
       transTyping: "Type instead", transSend: "Translate", transClear: "Clear",
+      ocrBtn: "Translate text in a photo", ocrReady: "Getting ready…", ocrReading: "Reading the text…",
+      ocrFirst: "One-time setup download (about 5MB)\nBest done on Wi-Fi",
+      ocrTitle: "Text found · fix anything wrong", ocrNone: "No text found in the photo",
+      ocrGo: "Translate",
       transFail: "Could not translate. Try again.",
       transOffline: "No internet, so translation is off. The 💬 phrases still work.",
       transNoSpeech: "I didn't hear anything", transDenied: "Please allow microphone access",
@@ -1241,6 +1272,10 @@
       transEmpty: "下の 🎤 を押したまま話してください。\n離すと翻訳します。",
       transHold: "🎤 を押したまま話してください",
       transTyping: "直接入力", transSend: "翻訳", transClear: "消す",
+      ocrBtn: "写真の文字を翻訳", ocrReady: "準備中…", ocrReading: "文字を読んでいます…",
+      ocrFirst: "初回だけ準備ファイルを取得します（約5MB）\nWi-Fiでの取得がおすすめです",
+      ocrTitle: "読み取った文字・間違いは直してください", ocrNone: "写真から文字が見つかりませんでした",
+      ocrGo: "翻訳する",
       transFail: "翻訳できませんでした。もう一度お試しください。",
       transOffline: "インターネットがないため翻訳できません。💬 の文はそのまま使えます。",
       transNoSpeech: "音が聞こえませんでした", transDenied: "マイクを許可してください",
@@ -1372,6 +1407,10 @@
       transEmpty: "Giữ 🎤 bên dưới trong khi nói.\nThả tay ra là dịch ngay.",
       transHold: "Giữ 🎤 trong khi nói",
       transTyping: "Gõ trực tiếp", transSend: "Dịch", transClear: "Xoá",
+      ocrBtn: "Dịch chữ trong ảnh", ocrReady: "Đang chuẩn bị…", ocrReading: "Đang đọc chữ…",
+      ocrFirst: "Lần đầu sẽ tải tệp chuẩn bị (khoảng 5MB)\nNên tải khi có Wi-Fi",
+      ocrTitle: "Chữ đọc được · hãy sửa nếu sai", ocrNone: "Không tìm thấy chữ trong ảnh",
+      ocrGo: "Dịch",
       transFail: "Không dịch được. Hãy thử lại.",
       transOffline: "Không có mạng nên không dịch được. Các câu ở 💬 vẫn dùng được.",
       transNoSpeech: "Không nghe thấy gì", transDenied: "Hãy cho phép dùng micro",
@@ -1503,6 +1542,10 @@
       transEmpty: "按住下面的 🎤 说话。\n松手就会翻译。",
       transHold: "请按住 🎤 不放再说话",
       transTyping: "直接输入", transSend: "翻译", transClear: "清空",
+      ocrBtn: "翻译照片里的文字", ocrReady: "正在准备…", ocrReading: "正在识别文字…",
+      ocrFirst: "首次会下载准备文件（约 5MB）\n建议在 Wi-Fi 下载",
+      ocrTitle: "识别到的文字 · 有错请修改", ocrNone: "照片里没有找到文字",
+      ocrGo: "翻译",
       transFail: "翻译失败，请再试一次。",
       transOffline: "没有网络，无法翻译。💬 里的句子仍然可用。",
       transNoSpeech: "没有听到声音", transDenied: "请允许使用麦克风",
@@ -2189,6 +2232,103 @@
     return talk;
   }
 
+
+  /* ────────── 사진 속 글자 읽기 (OCR) ────────── */
+  /* 글자 인식은 폰 안에서 한다(tesseract). 파일을 앱과 같이 두고 있어서 인터넷 없이도 된다.
+     처음 한 번만 5MB 정도를 받고, 그 뒤로는 저장돼서 바로 열린다. */
+  var ocrLib = null, ocrWorker = null;
+
+  function simdOk() {
+    try {
+      return WebAssembly.validate(new Uint8Array([
+        0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 96, 0, 1, 123,
+        3, 2, 1, 0, 10, 10, 1, 8, 0, 65, 0, 253, 15, 253, 98, 11
+      ]));
+    } catch (e) { return false; }
+  }
+
+  function ensureOcrLib() {
+    if (window.Tesseract) return Promise.resolve(true);
+    if (ocrLib) return ocrLib;
+    ocrLib = new Promise(function (resolve) {
+      var sc = document.createElement("script");
+      sc.src = "ocr/tesseract.min.js";
+      sc.async = true;
+      sc.onload = function () { resolve(!!window.Tesseract); };
+      sc.onerror = function () { ocrLib = null; resolve(false); };
+      document.head.appendChild(sc);
+    });
+    return ocrLib;
+  }
+
+  function ocrReady(onStep) {
+    if (ocrWorker) return Promise.resolve(ocrWorker);
+    return ensureOcrLib().then(function (ok) {
+      if (!ok) throw new Error("no-lib");
+      var opts = {
+        workerPath: "ocr/worker.min.js",
+        langPath: "ocr/",
+        gzip: true,
+        logger: function (m) {
+          if (onStep && m && m.status) onStep(m.status, m.progress || 0);
+        }
+      };
+      /* SIMD 를 쓸 수 있으면 앱과 같이 둔 파일을, 아니면 인터넷에서 받는다 */
+      if (simdOk()) opts.corePath = "ocr/tesseract-core-simd-lstm.wasm.js";
+      return window.Tesseract.createWorker("chi_sim", 1, opts);
+    }).then(function (w) {
+      ocrWorker = w;
+      return w;
+    });
+  }
+
+  function ocrStop() {
+    if (!ocrWorker) return;
+    var w = ocrWorker;
+    ocrWorker = null;
+    try { w.terminate(); } catch (e) {}
+  }
+
+  /* 사진을 적당히 줄이고 흑백으로 바꿔 글자가 잘 읽히게 한다 */
+  function ocrPrepare(file) {
+    return loadBitmap(file).then(function (src) {
+      var w0 = src.width || src.naturalWidth;
+      var h0 = src.height || src.naturalHeight;
+      var max = 1600;
+      var scale = Math.min(1, max / Math.max(w0, h0));
+      var cw = Math.max(1, Math.round(w0 * scale));
+      var ch = Math.max(1, Math.round(h0 * scale));
+      var canvas = document.createElement("canvas");
+      canvas.width = cw;
+      canvas.height = ch;
+      var ctx = canvas.getContext("2d", { willReadFrequently: true });
+      ctx.drawImage(src, 0, 0, cw, ch);
+      try {
+        var img = ctx.getImageData(0, 0, cw, ch);
+        var d = img.data;
+        for (var i = 0; i < d.length; i += 4) {
+          var g = (d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114);
+          g = (g - 128) * 1.25 + 128;            /* 대비를 살짝 올린다 */
+          g = g < 0 ? 0 : (g > 255 ? 255 : g);
+          d[i] = d[i + 1] = d[i + 2] = g;
+        }
+        ctx.putImageData(img, 0, 0);
+      } catch (e) {}
+      return canvas;
+    });
+  }
+
+  /* 한자 사이에 끼는 공백을 없앤다 (있으면 번역이 이상해진다) */
+  function ocrClean(text) {
+    var out = String(text || "").replace(/\r/g, "");
+    out = out.replace(/[ \t]+/g, " ");
+    for (var i = 0; i < 3; i++) {
+      out = out.replace(/([㐀-鿿＀-￯])[ \t]+(?=[㐀-鿿＀-￯])/g, "$1");
+    }
+    out = out.split("\n").map(function (l) { return l.trim(); }).filter(function (l) { return l; }).join("\n");
+    return out;
+  }
+
   function openTranslator() {
     var log = [];
     var rec = null, listening = "", side = "me";
@@ -2203,6 +2343,7 @@
       '</div>' +
       '<div class="trans-body"></div>' +
       '<div class="trans-type">' +
+        '<button class="shot" data-shot="1" aria-label="' + esc(t("ocrBtn")) + '">📷</button>' +
         '<button class="side" data-side="1"></button>' +
         '<input class="input" type="text" placeholder="' + esc(t("transTyping")) + '" autocomplete="off">' +
         '<button class="send" data-send="1">' + esc(t("transSend")) + '</button>' +
@@ -2370,8 +2511,85 @@
       push(side === "me", text);
     }
 
+    /* 사진 → 글자 읽기 → 고치기 → 번역 */
+    function pickPhoto() {
+      var picker = document.getElementById("fileOcr");
+      picker.value = "";
+      picker.onchange = function () {
+        var file = picker.files && picker.files[0];
+        picker.onchange = null;
+        if (file) readPhoto(file);
+      };
+      picker.click();
+    }
+
+    function waitBox() {
+      var box = document.createElement("div");
+      box.className = "ocr-wait";
+      box.innerHTML = '<div class="ocr-box"><span class="msg">' + esc(t("ocrReady")) + '</span>' +
+        '<div class="bar"><i></i></div>' +
+        '<div class="sub">' + esc(t("ocrFirst")) + '</div></div>';
+      document.body.appendChild(box);
+      return {
+        set: function (msg, pct) {
+          box.querySelector(".msg").textContent = msg;
+          box.querySelector(".bar i").style.width = Math.round(pct * 100) + "%";
+        },
+        done: function () { box.remove(); }
+      };
+    }
+
+    function readPhoto(file) {
+      var wait = waitBox();
+      var started = Date.now();
+      ocrReady(function (status, pct) {
+        /* 준비(다운로드)와 읽기를 나눠서 보여준다 */
+        wait.set(status === "recognizing text" ? t("ocrReading") : t("ocrReady"), pct);
+      }).then(function (worker) {
+        wait.set(t("ocrReading"), 0.05);
+        return ocrPrepare(file).then(function (canvas) {
+          return worker.recognize(canvas);
+        });
+      }).then(function (res) {
+        wait.done();
+        var text = ocrClean(res && res.data && res.data.text);
+        if (!text) { toast(t("ocrNone")); return; }
+        editFound(text);
+      })["catch"](function () {
+        wait.done();
+        toast(t("ocrNone"));
+      });
+      return started;
+    }
+
+    /* 잘못 읽은 글자를 사람이 고친 뒤 번역한다 */
+    function editFound(text) {
+      var box = document.createElement("div");
+      box.className = "backdrop center over";
+      box.innerHTML = '<div class="dialog wide">' +
+        '<p>' + esc(t("ocrTitle")) + '</p>' +
+        '<textarea class="input ocr-edit" rows="7"></textarea>' +
+        '<div class="btns">' +
+          '<button data-x="1">' + esc(t("cancel")) + '</button>' +
+          '<button class="primary" data-go="1">' + esc(t("ocrGo")) + '</button>' +
+        '</div></div>';
+      var area = box.querySelector("textarea");
+      area.value = text;
+      box.addEventListener("click", function (e) {
+        if (e.target.closest("[data-go]")) {
+          var v = area.value.trim();
+          box.remove();
+          if (v) push(false, v);        /* 상대 말(택에 적힌 말)로 다룬다 */
+          return;
+        }
+        if (e.target.closest("[data-x]") || e.target === box) box.remove();
+      });
+      document.body.appendChild(box);
+    }
+
     function close() {
       cancelMic();
+      ocrStop();
       if (window.speechSynthesis) { try { speechSynthesis.cancel(); } catch (e) {} }
       document.removeEventListener("keydown", onKey);
       document.body.classList.remove("has-overlay");
@@ -2387,6 +2605,7 @@
       if (e.target.closest("[data-clear]")) { log = []; draw(); return; }
       if (e.target.closest("[data-side]")) { side = side === "me" ? "you" : "me"; drawButtons(); input.focus(); return; }
       if (e.target.closest("[data-send]")) { sendTyped(); return; }
+      if (e.target.closest("[data-shot]")) { pickPhoto(); return; }
       var say = e.target.closest("[data-say]");
       if (say) { var a = log[+say.dataset.say]; if (a) speakIn(a.dst, a.to); return; }
       var big = e.target.closest("[data-big]");
