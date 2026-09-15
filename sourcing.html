@@ -388,6 +388,40 @@
   /* 검색처럼 다른 전체 화면에서는 숨긴다 */
   body.has-overlay:not(.trans-open) .fab { display: none; }
 
+  /* ── 시장 안내(층별) ── */
+  .guide-back { position: fixed; inset: 0; z-index: 60; background: var(--bg); display: flex; flex-direction: column; }
+  .guide-bar {
+    flex: none; display: flex; align-items: center; gap: 8px;
+    padding: calc(10px + env(safe-area-inset-top, 0px)) 14px 10px;
+    background: var(--card); border-bottom: 1px solid var(--border);
+  }
+  .guide-bar .input { flex: 1; min-width: 0; }
+  .guide-bar .mini {
+    flex: none; border: 1px solid var(--border); background: var(--bg); color: var(--muted);
+    border-radius: 11px; padding: 11px 12px; font-size: 13px; font-weight: 600; position: relative;
+  }
+  .guide-bar .mini::after { content: ""; position: absolute; inset: -8px -6px; }
+  .guide-body { flex: 1; overflow-y: auto; padding: 10px 14px calc(24px + var(--safe-b)); }
+  .guide-note { font-size: 12px; color: var(--muted); line-height: 1.6; margin: 4px 2px 12px; }
+  .guide-area { font-size: 13px; font-weight: 800; color: var(--accent); margin: 16px 4px 8px; }
+  .guide-row {
+    display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+    background: var(--card); border: 1px solid var(--border); border-radius: 13px;
+    padding: 12px 13px; margin-bottom: 7px; color: var(--text);
+  }
+  .guide-row:active { background: var(--accent-soft); }
+  .guide-floor {
+    flex: none; min-width: 42px; text-align: center; font-size: 13px; font-weight: 800;
+    color: var(--accent); background: var(--accent-soft); border-radius: 8px; padding: 5px 6px;
+  }
+  .guide-txt { flex: 1; min-width: 0; }
+  .guide-ko { display: block; font-size: 15px; font-weight: 700; line-height: 1.4; }
+  .guide-zh { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .guide-add {
+    width: 100%; border: 1px dashed var(--border); background: none; color: var(--muted);
+    border-radius: 13px; padding: 14px; font-size: 14px; font-weight: 700; margin-top: 10px;
+  }
+
   /* ── 지도 · 길 기록 ── */
   .map-back { position: fixed; inset: 0; z-index: 60; background: var(--bg); display: flex; flex-direction: column; }
   .map-bar {
@@ -917,6 +951,16 @@
       installOther: "브라우저 메뉴(⋮) → \"홈 화면에 추가\" 를 누르면\n앱처럼 쓸 수 있어요.",
       installDone: "홈 화면에 추가했어요", offlineReady: "이제 인터넷 없이도 열려요",
       updateReady: "새 버전이 있어요 · 새로고침하면 적용돼요",
+      menuGuide: "🏬 시장 안내 (층별)",
+      guideSearch: "품목 검색 (예: 가방, 양말)",
+      guideNote: "참고용입니다. 구역·층은 바뀔 수 있으니 직접 확인하고 고쳐 쓰세요.\n줄을 누르면 메모에 넣거나 중국어로 읽어줍니다.",
+      guideAdd: "+ 줄 추가", guideReset: "기본값",
+      guideResetAsk: "고친 내용을 지우고 기본 안내로 되돌릴까요?",
+      guideNone: "찾는 품목이 없습니다",
+      guideArea: "구역", guideFloor: "층", guideKo: "품목 (내 말)", guideZh: "품목 (현지 말)",
+      guideDelAsk: "이 줄을 지울까요?",
+      guideSaved: "메모에 넣었어요",
+      guideToMemo: "📌 메모에 넣기", guideCopyRow: "📋 복사", guideEdit: "✏️ 고치기", guideDel: "🗑 지우기",
       menuMap: "🗺 지도 · 길 기록",
       trackStart: "길 기록 시작", trackStop: "■ 기록 중", trackHere: "📍 여기", trackPill: "길 기록 중",
       trackOn: "길을 기록합니다", trackOff: "기록을 멈췄어요",
@@ -1038,6 +1082,16 @@
       installOther: "Open the browser menu (⋮), then\n\"Add to Home screen\" to use it like an app.",
       installDone: "Added to your home screen", offlineReady: "It now opens without internet",
       updateReady: "New version ready · refresh to apply",
+      menuGuide: "🏬 Market guide (by floor)",
+      guideSearch: "Search items (e.g. bags, socks)",
+      guideNote: "For reference only. Districts and floors change — check and edit them yourself.\nTap a row to copy it into a memo or hear it in Chinese.",
+      guideAdd: "+ Add row", guideReset: "Defaults",
+      guideResetAsk: "Discard your edits and restore the default guide?",
+      guideNone: "No matching item",
+      guideArea: "District", guideFloor: "Floor", guideKo: "Item (my language)", guideZh: "Item (local language)",
+      guideDelAsk: "Delete this row?",
+      guideSaved: "Added to the memo",
+      guideToMemo: "📌 Add to memo", guideCopyRow: "📋 Copy", guideEdit: "✏️ Edit", guideDel: "🗑 Delete",
       menuMap: "🗺 Map · Track",
       trackStart: "Start tracking", trackStop: "■ Tracking", trackHere: "📍 Here", trackPill: "Tracking",
       trackOn: "Tracking your walk", trackOff: "Tracking stopped",
@@ -1159,6 +1213,16 @@
       installOther: "ブラウザのメニュー（⋮）→「ホーム画面に追加」で\nアプリのように使えます。",
       installDone: "ホーム画面に追加しました", offlineReady: "これでオフラインでも開きます",
       updateReady: "新しいバージョンがあります · 再読み込みで反映",
+      menuGuide: "🏬 市場案内（フロア別）",
+      guideSearch: "品目を検索（例：かばん、靴下）",
+      guideNote: "参考情報です。区・階は変わることがあるので確認して直してください。\n行を押すとメモに入れたり中国語で読み上げます。",
+      guideAdd: "+ 行を追加", guideReset: "初期値",
+      guideResetAsk: "編集を消して初期の案内に戻しますか？",
+      guideNone: "該当する品目がありません",
+      guideArea: "区", guideFloor: "階", guideKo: "品目（自分の言語）", guideZh: "品目（現地の言語）",
+      guideDelAsk: "この行を削除しますか？",
+      guideSaved: "メモに入れました",
+      guideToMemo: "📌 メモに入れる", guideCopyRow: "📋 コピー", guideEdit: "✏️ 直す", guideDel: "🗑 削除",
       menuMap: "🗺 地図・足あと",
       trackStart: "足あと記録", trackStop: "■ 記録中", trackHere: "📍 ここ", trackPill: "記録中",
       trackOn: "歩いた道を記録します", trackOff: "記録を止めました",
@@ -1280,6 +1344,16 @@
       installOther: "Mở menu trình duyệt (⋮) →\n\"Thêm vào màn hình chính\" để dùng như ứng dụng.",
       installDone: "Đã thêm vào màn hình chính", offlineReady: "Giờ mở được cả khi không có mạng",
       updateReady: "Có bản mới · tải lại để áp dụng",
+      menuGuide: "🏬 Hướng dẫn chợ (theo tầng)",
+      guideSearch: "Tìm mặt hàng (vd: túi, tất)",
+      guideNote: "Chỉ để tham khảo. Khu và tầng có thể thay đổi — hãy tự kiểm tra và sửa.\nNhấn một dòng để lưu vào ghi chú hoặc đọc bằng tiếng Trung.",
+      guideAdd: "+ Thêm dòng", guideReset: "Mặc định",
+      guideResetAsk: "Xoá chỉnh sửa và khôi phục hướng dẫn mặc định?",
+      guideNone: "Không có mặt hàng phù hợp",
+      guideArea: "Khu", guideFloor: "Tầng", guideKo: "Mặt hàng (tiếng của tôi)", guideZh: "Mặt hàng (tiếng địa phương)",
+      guideDelAsk: "Xoá dòng này?",
+      guideSaved: "Đã thêm vào ghi chú",
+      guideToMemo: "📌 Lưu vào ghi chú", guideCopyRow: "📋 Sao chép", guideEdit: "✏️ Sửa", guideDel: "🗑 Xoá",
       menuMap: "🗺 Bản đồ · Lộ trình",
       trackStart: "Bắt đầu ghi", trackStop: "■ Đang ghi", trackHere: "📍 Ở đây", trackPill: "Đang ghi",
       trackOn: "Đang ghi lộ trình", trackOff: "Đã dừng ghi",
@@ -1401,6 +1475,16 @@
       installOther: "打开浏览器菜单（⋮）→「添加到主屏幕」\n就能像 App 一样使用。",
       installDone: "已添加到主屏幕", offlineReady: "现在没有网络也能打开",
       updateReady: "有新版本 · 刷新后生效",
+      menuGuide: "🏬 市场导览（分楼层）",
+      guideSearch: "搜索品类（例：箱包、袜子）",
+      guideNote: "仅供参考。区和楼层会变动，请自行核对并修改。\n点一行可以存进备注或用中文读出来。",
+      guideAdd: "+ 添加一行", guideReset: "默认",
+      guideResetAsk: "清除修改并恢复默认导览？",
+      guideNone: "没有符合的品类",
+      guideArea: "区", guideFloor: "楼", guideKo: "品类（我的语言）", guideZh: "品类（当地语言）",
+      guideDelAsk: "要删除这一行吗？",
+      guideSaved: "已存进备注",
+      guideToMemo: "📌 存进备注", guideCopyRow: "📋 复制", guideEdit: "✏️ 修改", guideDel: "🗑 删除",
       menuMap: "🗺 地图 · 路线",
       trackStart: "开始记录", trackStop: "■ 记录中", trackHere: "📍 这里", trackPill: "记录中",
       trackOn: "正在记录走过的路", trackOff: "已停止记录",
@@ -1577,7 +1661,8 @@
   function confirmDialog(message, okLabel) {
     return new Promise(function (resolve) {
       var back = document.createElement("div");
-      back.className = "backdrop center";
+      /* 지도·안내 같은 전체 화면 위에서도 확인창이 위에 오도록 */
+      back.className = "backdrop center over";
       back.innerHTML =
         '<div class="dialog"><p>' + esc(message) + '</p><div class="btns">' +
         '<button data-r="0">' + esc(t("cancel")) + '</button>' +
@@ -2247,34 +2332,9 @@
       if (!rec) { listening = ""; drawButtons(); }
     }
 
-    function appendMemo(it, line) {
-      if (!it) return;
-      it.memo = (it.memo ? it.memo + "\n" : "") + line;
-      save();
-      render();
-      toast(t("transSaved"));
-    }
-
     /* 나눈 말을 그 자리에서 업체 메모로 남긴다 — 이게 통역 앱과 다른 점 */
     function saveMemo(m) {
-      var v = vendor();
-      var line = m.mine ? m.src : (m.dst + " (" + m.src + ")");
-      var items = v.items || [];
-      if (items.length <= 1) { appendMemo(items[0], line); return; }
-      var pick = document.createElement("div");
-      pick.className = "backdrop over";
-      pick.innerHTML = '<div class="sheet"><h3>' + esc(t("transPick")) + '</h3>' +
-        items.map(function (it, i) {
-          var sub = String(it.memo || it.price || "").split("\n")[0];
-          return '<button class="sheet-item" data-pick="' + i + '"><span class="grow">' +
-            esc(t("itemChip", i + 1) + (sub ? " · " + sub : "")) + '</span></button>';
-        }).join("") + '</div>';
-      pick.addEventListener("click", function (e) {
-        var row = e.target.closest("[data-pick]");
-        if (row) { pick.remove(); appendMemo(items[+row.dataset.pick], line); return; }
-        if (e.target === pick) pick.remove();
-      });
-      document.body.appendChild(pick);
+      memoPick(m.mine ? m.src : (m.dst + " (" + m.src + ")"));
     }
 
     function bigCard(m) {
@@ -3344,6 +3404,233 @@
     });
   }
 
+
+  /* ────────── 시장 안내 (층별) ────────── */
+  /* 이우 국제상무성(义乌国际商贸城) 기준 참고 자료.
+     구역·층은 수시로 바뀌므로 화면에서 직접 고칠 수 있게 해두고, 고친 내용을 저장한다. */
+  var GUIDE_SEED = [
+    ["1구 · 1区", "1", "완구 · 장난감", "玩具"],
+    ["1구 · 1区", "2", "도자기 · 크리스탈 · 액자", "陶瓷 · 水晶 · 相框"],
+    ["1구 · 1区", "3", "조화 · 레이스", "花类 · 花边"],
+    ["1구 · 1区", "4", "공예품 · 인테리어 소품", "工艺品 · 家居饰品"],
+
+    ["2구 · 2区", "1", "가방 · 우산", "箱包 · 雨具"],
+    ["2구 · 2区", "2", "철물 · 공구 · 자물쇠", "五金 · 工具 · 锁具"],
+    ["2구 · 2区", "3", "전자제품 · 시계", "电子电器 · 钟表"],
+    ["2구 · 2区", "4", "전기용품 · 조명", "电器 · 照明"],
+
+    ["3구 · 3区", "1", "문구 · 사무 · 스포츠용품", "文体用品 · 办公"],
+    ["3구 · 3区", "2", "화장품 · 미용소품 · 지퍼 · 단추", "化妆品 · 拉链 · 纽扣"],
+    ["3구 · 3区", "3", "액세서리", "饰品"],
+    ["3구 · 3区", "4", "안경 · 액세서리", "眼镜 · 饰品"],
+    ["3구 · 3区", "5", "무역회사 사무실", "外贸公司"],
+
+    ["4구 · 4区", "1", "양말", "袜子"],
+    ["4구 · 4区", "2", "생활용품 · 잡화", "日用百货"],
+    ["4구 · 4区", "3", "모자 · 장갑 · 목도리", "帽子 · 手套 · 围巾"],
+    ["4구 · 4区", "4", "속옷 · 니트", "内衣 · 针织"],
+    ["4구 · 4区", "5", "신발", "鞋类"],
+
+    ["5구 · 5区", "1", "수입관", "进口商品馆"],
+    ["5구 · 5区", "2", "자동차용품 · 철물", "汽车用品 · 五金"],
+    ["5구 · 5区", "3", "침구 · 홈텍스타일", "家纺 · 床上用品"],
+    ["5구 · 5区", "4", "커튼 · 인테리어", "窗帘 · 家居"],
+    ["5구 · 5区", "5", "무역 · 사무", "外贸 · 办公"],
+
+    ["다른 시장 · 其他", "", "의류 (황원 의류시장)", "篁园服装市场"],
+    ["다른 시장 · 其他", "", "원부자재 (국제생산자재시장)", "国际生产资料市场"],
+    ["다른 시장 · 其他", "", "구시장 (빈왕시장)", "宾王市场"]
+  ];
+
+  function guideRows() {
+    if (!Array.isArray(state.guide) || !state.guide.length) {
+      state.guide = GUIDE_SEED.map(function (r) {
+        return { id: uid(), a: r[0], f: r[1], ko: r[2], zh: r[3] };
+      });
+    }
+    return state.guide;
+  }
+
+  /* 고른 줄을 지금 업체의 물건 메모에 넣는다 */
+  function memoPick(line) {
+    var v = vendor();
+    var items = (v && v.items) || [];
+    function put(it) {
+      if (!it) return;
+      it.memo = (it.memo ? it.memo + "\n" : "") + line;
+      save();
+      render();
+      toast(t("guideSaved"));
+    }
+    if (items.length <= 1) { put(items[0]); return; }
+    var pick = document.createElement("div");
+    pick.className = "backdrop over";
+    pick.innerHTML = '<div class="sheet"><h3>' + esc(t("transPick")) + '</h3>' +
+      items.map(function (it, i) {
+        var sub = String(it.memo || it.price || "").split("\n")[0];
+        return '<button class="sheet-item" data-pick="' + i + '"><span class="grow">' +
+          esc(t("itemChip", i + 1) + (sub ? " · " + sub : "")) + '</span></button>';
+      }).join("") + '</div>';
+    pick.addEventListener("click", function (e) {
+      var row = e.target.closest("[data-pick]");
+      if (row) { pick.remove(); put(items[+row.dataset.pick]); return; }
+      if (e.target === pick) pick.remove();
+    });
+    document.body.appendChild(pick);
+  }
+
+  function openGuide() {
+    var back = document.createElement("div");
+    back.className = "guide-back";
+    back.innerHTML =
+      '<div class="guide-bar">' +
+        '<button class="mini" data-shut="1">' + esc(t("close")) + '</button>' +
+        '<input class="input" type="search" placeholder="' + esc(t("guideSearch")) + '" autocomplete="off">' +
+        '<button class="mini" data-reset="1">' + esc(t("guideReset")) + '</button>' +
+      '</div>' +
+      '<div class="guide-body"></div>';
+
+    var body = back.querySelector(".guide-body");
+    var input = back.querySelector("input");
+
+    function draw() {
+      var rows = guideRows();
+      var q = plain(input.value);
+      var hits = !q ? rows : rows.filter(function (r) {
+        return plain(r.a + " " + r.f + " " + r.ko + " " + r.zh).indexOf(q) > -1;
+      });
+
+      var html = '<p class="guide-note">' + esc(t("guideNote")) + '</p>';
+      if (!hits.length) {
+        html += '<p class="search-msg">' + esc(t("guideNone")) + '</p>';
+      } else {
+        var area = null;
+        hits.forEach(function (r) {
+          if (r.a !== area) {
+            area = r.a;
+            html += '<h3 class="guide-area">' + esc(area) + '</h3>';
+          }
+          html += '<button class="guide-row" data-row="' + esc(r.id) + '">' +
+            '<span class="guide-floor">' + esc(r.f ? r.f + t("guideFloor") : "·") + '</span>' +
+            '<span class="guide-txt"><span class="guide-ko">' + esc(r.ko) + '</span>' +
+            (r.zh ? '<span class="guide-zh">' + esc(r.zh) + '</span>' : "") + '</span>' +
+            '</button>';
+        });
+      }
+      html += '<button class="guide-add" data-add="1">' + esc(t("guideAdd")) + '</button>';
+      body.innerHTML = html;
+    }
+
+    function lineOf(r) {
+      return (r.a ? r.a + " " : "") + (r.f ? r.f + t("guideFloor") + " " : "") + r.ko + (r.zh ? " (" + r.zh + ")" : "");
+    }
+
+    function edit(r) {
+      var isNew = !r;
+      var row = r || { id: uid(), a: "", f: "", ko: "", zh: "" };
+      var back2 = document.createElement("div");
+      back2.className = "backdrop center over";
+      back2.innerHTML =
+        '<div class="dialog">' +
+          '<div class="field"><label>' + esc(t("guideArea")) + '</label>' +
+            '<input class="input" data-k="a" value="' + esc(row.a) + '"></div>' +
+          '<div class="field"><label>' + esc(t("guideFloor")) + '</label>' +
+            '<input class="input" data-k="f" inputmode="numeric" value="' + esc(row.f) + '"></div>' +
+          '<div class="field"><label>' + esc(t("guideKo")) + '</label>' +
+            '<input class="input" data-k="ko" value="' + esc(row.ko) + '"></div>' +
+          '<div class="field"><label>' + esc(t("guideZh")) + '</label>' +
+            '<input class="input" data-k="zh" value="' + esc(row.zh) + '"></div>' +
+          '<div class="btns">' +
+            '<button data-x="1">' + esc(t("cancel")) + '</button>' +
+            '<button class="primary" data-ok="1">' + esc(t("okBtn")) + '</button>' +
+          '</div></div>';
+      back2.addEventListener("click", function (e) {
+        if (e.target.closest("[data-ok]")) {
+          ["a", "f", "ko", "zh"].forEach(function (k) {
+            row[k] = back2.querySelector('[data-k="' + k + '"]').value.trim();
+          });
+          if (!row.ko && !row.zh) { back2.remove(); return; }
+          if (isNew) guideRows().push(row);
+          save();
+          back2.remove();
+          draw();
+          return;
+        }
+        if (e.target.closest("[data-x]") || e.target === back2) back2.remove();
+      });
+      document.body.appendChild(back2);
+      setTimeout(function () { back2.querySelector("input").focus(); }, 50);
+    }
+
+    function rowMenu(r) {
+      var sheet = document.createElement("div");
+      sheet.className = "backdrop over";
+      sheet.innerHTML = '<div class="sheet">' +
+        '<h3>' + esc(lineOf(r)) + '</h3>' +
+        '<button class="sheet-item" data-a="memo"><span class="grow">' + esc(t("guideToMemo")) + '</span></button>' +
+        '<button class="sheet-item" data-a="copy"><span class="grow">' + esc(t("guideCopyRow")) + '</span></button>' +
+        (r.zh ? '<button class="sheet-item" data-a="say"><span class="grow">🔊 ' + esc(r.zh) + '</span></button>' : "") +
+        '<button class="sheet-item" data-a="edit"><span class="grow">' + esc(t("guideEdit")) + '</span></button>' +
+        '<button class="sheet-item" data-a="del"><span class="grow">' + esc(t("guideDel")) + '</span></button>' +
+        '</div>';
+      sheet.addEventListener("click", function (e) {
+        var btn = e.target.closest("[data-a]");
+        if (!btn) { if (e.target === sheet) sheet.remove(); return; }
+        var act = btn.dataset.a;
+        sheet.remove();
+        if (act === "memo") { memoPick(lineOf(r)); return; }
+        if (act === "copy") { copyToClipboard(lineOf(r), t("copied")); return; }
+        if (act === "say") { speakIn(r.zh, "zh"); return; }
+        if (act === "edit") { edit(r); return; }
+        if (act === "del") {
+          confirmDialog(t("guideDelAsk")).then(function (ok) {
+            if (!ok) return;
+            var rows = guideRows();
+            var at = -1;
+            rows.forEach(function (x, i) { if (x.id === r.id) at = i; });
+            if (at > -1) rows.splice(at, 1);
+            save();
+            draw();
+          });
+        }
+      });
+      document.body.appendChild(sheet);
+    }
+
+    function close() {
+      document.body.classList.remove("has-overlay");
+      document.removeEventListener("keydown", onKey);
+      back.remove();
+    }
+    function onKey(e) { if (e.key === "Escape") close(); }
+
+    back.addEventListener("click", function (e) {
+      if (e.target.closest("[data-shut]")) { close(); return; }
+      if (e.target.closest("[data-add]")) { edit(null); return; }
+      if (e.target.closest("[data-reset]")) {
+        confirmDialog(t("guideResetAsk")).then(function (ok) {
+          if (!ok) return;
+          state.guide = null;
+          guideRows();
+          save();
+          draw();
+        });
+        return;
+      }
+      var row = e.target.closest("[data-row]");
+      if (!row) return;
+      var id = row.dataset.row;
+      var found = null;
+      guideRows().forEach(function (r) { if (r.id === id) found = r; });
+      if (found) rowMenu(found);
+    });
+    input.addEventListener("input", draw);
+    document.addEventListener("keydown", onKey);
+    document.body.classList.add("has-overlay");
+    document.body.appendChild(back);
+    draw();
+  }
+
   /* ────────── 메뉴 ────────── */
   document.getElementById("menuBtn").addEventListener("click", function () {
     var marketList = state.markets.map(function (m, i) {
@@ -3373,6 +3660,7 @@
       '<button class="sheet-item" data-act="add"><span class="grow">' + esc(t("addVendorRow")) + '</span></button>' +
       '<h3>' + esc(t("manage")) + '</h3>' +
       '<button class="sheet-item" data-act="talk"><span class="grow">' + esc(t("menuTalk")) + '</span></button>' +
+      '<button class="sheet-item" data-act="guide"><span class="grow">' + esc(t("menuGuide")) + '</span></button>' +
       '<button class="sheet-item" data-act="map"><span class="grow">' + esc(t("menuMap")) + '</span></button>' +
       '<button class="sheet-item" data-act="search"><span class="grow">' + esc(t("menuSearch")) + '</span></button>' +
       '<button class="sheet-item" data-act="copy"><span class="grow">' + esc(t("menuCopy")) + '</span></button>' +
@@ -3419,6 +3707,8 @@
       });
     } else if (act === "install") {
       doInstall();
+    } else if (act === "guide") {
+      openGuide();
     } else if (act === "map") {
       openMap();
     } else if (act === "talk") {
