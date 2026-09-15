@@ -304,7 +304,7 @@
   .bottombar .indicator b { color: var(--text); font-size: 15px; }
 
   /* ── 시트 / 모달 ── */
-  .backdrop.over { z-index: 70; }     /* 대화 번역 화면 위에 뜨는 시트 */
+  .backdrop.over { z-index: 80; }     /* 전체 화면(번역·지도·사진) 위에 뜨는 시트 */
   .backdrop {
     position: fixed; inset: 0; z-index: 40;
     background: rgba(0,0,0,0.45);
@@ -489,9 +489,29 @@
     border-radius: 11px; padding: 8px 10px; font-size: 17px; line-height: 1.2; position: relative;
   }
   .trans-type .shot::after { content: ""; position: absolute; inset: -7px -3px; }
+  /* 번역해서 덮어쓴 사진 */
+  .shot-back { position: fixed; inset: 0; z-index: 72; background: #111; display: flex; flex-direction: column; }
+  .shot-top {
+    flex: none; display: flex; align-items: center; gap: 8px;
+    padding: calc(10px + env(safe-area-inset-top, 0px)) 14px 10px;
+  }
+  .shot-top button, .shot-foot button {
+    border: 1px solid rgba(255,255,255,0.28); background: rgba(255,255,255,0.1); color: #fff;
+    border-radius: 12px; padding: 11px 13px; font-size: 14px; font-weight: 700; position: relative;
+  }
+  .shot-top button::after, .shot-foot button::after { content: ""; position: absolute; inset: -7px -4px; }
+  .shot-top .grow { flex: 1; min-width: 0; color: rgba(255,255,255,0.75); font-size: 13px; text-align: center; }
+  .shot-view { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 6px 10px; }
+  .shot-view img { max-width: 100%; max-height: 100%; border-radius: 10px; }
+  .shot-foot {
+    flex: none; display: flex; gap: 8px; justify-content: center;
+    padding: 10px 14px calc(14px + var(--safe-b));
+  }
+  .shot-foot button { flex: 1; max-width: 140px; }
+
   /* 사진에서 글자 읽는 중 */
   .ocr-wait {
-    position: fixed; inset: 0; z-index: 75; background: rgba(0,0,0,0.45);
+    position: fixed; inset: 0; z-index: 85; background: rgba(0,0,0,0.45);
     display: flex; align-items: center; justify-content: center;
   }
   .ocr-box {
@@ -1006,6 +1026,8 @@
       ocrFirst: "처음 한 번만 준비 파일을 받아요 (약 5MB)\n와이파이에서 받아두면 좋아요",
       ocrTitle: "읽은 글자 · 틀린 곳은 고치세요", ocrNone: "사진에서 글자를 찾지 못했어요",
       ocrGo: "번역하기",
+      ocrDrawing: function (a, b) { return "번역해서 덮는 중 " + a + "/" + b; },
+      ocrOrig: "원본", ocrOver: "번역본", ocrSave: "💾 저장", ocrText: "✏️ 글자", ocrMemo: "📌 메모",
       transFail: "번역을 못 했어요. 다시 눌러보세요.",
       transOffline: "인터넷이 없어 번역이 안 돼요. 💬 문장은 그대로 쓸 수 있어요.",
       transNoSpeech: "소리가 안 들렸어요", transDenied: "마이크 권한을 켜주세요",
@@ -1141,6 +1163,8 @@
       ocrFirst: "One-time setup download (about 5MB)\nBest done on Wi-Fi",
       ocrTitle: "Text found · fix anything wrong", ocrNone: "No text found in the photo",
       ocrGo: "Translate",
+      ocrDrawing: function (a, b) { return "Writing translation " + a + "/" + b; },
+      ocrOrig: "Original", ocrOver: "Translated", ocrSave: "💾 Save", ocrText: "✏️ Text", ocrMemo: "📌 Memo",
       transFail: "Could not translate. Try again.",
       transOffline: "No internet, so translation is off. The 💬 phrases still work.",
       transNoSpeech: "I didn't hear anything", transDenied: "Please allow microphone access",
@@ -1276,6 +1300,8 @@
       ocrFirst: "初回だけ準備ファイルを取得します（約5MB）\nWi-Fiでの取得がおすすめです",
       ocrTitle: "読み取った文字・間違いは直してください", ocrNone: "写真から文字が見つかりませんでした",
       ocrGo: "翻訳する",
+      ocrDrawing: function (a, b) { return "翻訳を重ねています " + a + "/" + b; },
+      ocrOrig: "元の写真", ocrOver: "翻訳後", ocrSave: "💾 保存", ocrText: "✏️ 文字", ocrMemo: "📌 メモ",
       transFail: "翻訳できませんでした。もう一度お試しください。",
       transOffline: "インターネットがないため翻訳できません。💬 の文はそのまま使えます。",
       transNoSpeech: "音が聞こえませんでした", transDenied: "マイクを許可してください",
@@ -1411,6 +1437,8 @@
       ocrFirst: "Lần đầu sẽ tải tệp chuẩn bị (khoảng 5MB)\nNên tải khi có Wi-Fi",
       ocrTitle: "Chữ đọc được · hãy sửa nếu sai", ocrNone: "Không tìm thấy chữ trong ảnh",
       ocrGo: "Dịch",
+      ocrDrawing: function (a, b) { return "Đang ghi bản dịch " + a + "/" + b; },
+      ocrOrig: "Ảnh gốc", ocrOver: "Đã dịch", ocrSave: "💾 Lưu", ocrText: "✏️ Chữ", ocrMemo: "📌 Ghi chú",
       transFail: "Không dịch được. Hãy thử lại.",
       transOffline: "Không có mạng nên không dịch được. Các câu ở 💬 vẫn dùng được.",
       transNoSpeech: "Không nghe thấy gì", transDenied: "Hãy cho phép dùng micro",
@@ -1546,6 +1574,8 @@
       ocrFirst: "首次会下载准备文件（约 5MB）\n建议在 Wi-Fi 下载",
       ocrTitle: "识别到的文字 · 有错请修改", ocrNone: "照片里没有找到文字",
       ocrGo: "翻译",
+      ocrDrawing: function (a, b) { return "正在覆盖译文 " + a + "/" + b; },
+      ocrOrig: "原图", ocrOver: "译文", ocrSave: "💾 保存", ocrText: "✏️ 文字", ocrMemo: "📌 备注",
       transFail: "翻译失败，请再试一次。",
       transOffline: "没有网络，无法翻译。💬 里的句子仍然可用。",
       transNoSpeech: "没有听到声音", transDenied: "请允许使用麦克风",
@@ -2298,13 +2328,19 @@
       var scale = Math.min(1, max / Math.max(w0, h0));
       var cw = Math.max(1, Math.round(w0 * scale));
       var ch = Math.max(1, Math.round(h0 * scale));
-      var canvas = document.createElement("canvas");
-      canvas.width = cw;
-      canvas.height = ch;
-      var ctx = canvas.getContext("2d", { willReadFrequently: true });
-      ctx.drawImage(src, 0, 0, cw, ch);
+
+      /* 원본색 — 번역문을 덮어쓸 사진 */
+      var color = document.createElement("canvas");
+      color.width = cw; color.height = ch;
+      color.getContext("2d", { willReadFrequently: true }).drawImage(src, 0, 0, cw, ch);
+
+      /* 흑백 — 글자를 읽기 좋게 대비를 올린 사진 */
+      var gray = document.createElement("canvas");
+      gray.width = cw; gray.height = ch;
+      var gctx = gray.getContext("2d", { willReadFrequently: true });
+      gctx.drawImage(src, 0, 0, cw, ch);
       try {
-        var img = ctx.getImageData(0, 0, cw, ch);
+        var img = gctx.getImageData(0, 0, cw, ch);
         var d = img.data;
         for (var i = 0; i < d.length; i += 4) {
           var g = (d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114);
@@ -2312,11 +2348,126 @@
           g = g < 0 ? 0 : (g > 255 ? 255 : g);
           d[i] = d[i + 1] = d[i + 2] = g;
         }
-        ctx.putImageData(img, 0, 0);
+        gctx.putImageData(img, 0, 0);
       } catch (e) {}
-      return canvas;
+      return { gray: gray, color: color, w: cw, h: ch };
     });
   }
+
+  /* 인식 결과에서 "줄 + 글자가 있던 네모"만 뽑는다 */
+  function ocrLines(res) {
+    var out = [];
+    var blocks = (res && res.data && res.data.blocks) || [];
+    blocks.forEach(function (b) {
+      (b.paragraphs || []).forEach(function (p) {
+        (p.lines || []).forEach(function (l) {
+          var txt = ocrClean(l.text);
+          if (!txt || !l.bbox) return;
+          if (l.confidence !== undefined && l.confidence < 30) return;   /* 너무 흐린 줄은 건너뛴다 */
+          out.push({ text: txt, box: l.bbox });
+        });
+      });
+    });
+    return out;
+  }
+
+  /* 글자가 있던 자리의 배경색을 테두리에서 뽑아낸다 */
+  function boxBackground(ctx, box, W, H) {
+    var pts = [];
+    var pad = 3;
+    var xs = [box.x0, (box.x0 + box.x1) / 2, box.x1];
+    var ys = [box.y0, (box.y0 + box.y1) / 2, box.y1];
+    xs.forEach(function (x) {
+      pts.push([x, box.y0 - pad], [x, box.y1 + pad]);
+    });
+    ys.forEach(function (y) {
+      pts.push([box.x0 - pad, y], [box.x1 + pad, y]);
+    });
+    var r = 0, g = 0, b = 0, n = 0;
+    pts.forEach(function (p) {
+      var x = Math.max(0, Math.min(W - 1, Math.round(p[0])));
+      var y = Math.max(0, Math.min(H - 1, Math.round(p[1])));
+      try {
+        var d = ctx.getImageData(x, y, 1, 1).data;
+        r += d[0]; g += d[1]; b += d[2]; n++;
+      } catch (e) {}
+    });
+    if (!n) return { r: 255, g: 255, b: 255 };
+    return { r: Math.round(r / n), g: Math.round(g / n), b: Math.round(b / n) };
+  }
+
+  /* 번역문을 네모 안에 들어가게 크기를 맞춰 쓴다 */
+  function drawInBox(ctx, text, box, bg) {
+    var w = box.x1 - box.x0, h = box.y1 - box.y0;
+    var bright = (bg.r * 299 + bg.g * 587 + bg.b * 114) / 1000;
+    var ink = bright > 140 ? "#161616" : "#ffffff";
+    var face = '-apple-system, "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
+
+    function widthAt(size, str) {
+      ctx.font = "700 " + size + "px " + face;
+      return ctx.measureText(str).width;
+    }
+    var size = Math.max(9, Math.round(h * 0.78));
+    var rows = [text];
+    if (widthAt(size, text) > w - 4) {
+      var fit = size * (w - 4) / widthAt(size, text);
+      if (fit >= h * 0.46) {
+        size = Math.max(9, Math.round(fit));
+      } else {
+        /* 너무 작아지면 두 줄로 나눈다 */
+        size = Math.max(9, Math.round(h * 0.46));
+        var half = Math.ceil(text.length / 2);
+        var cut = text.lastIndexOf(" ", half);
+        if (cut < 2) cut = half;
+        rows = [text.slice(0, cut).trim(), text.slice(cut).trim()];
+        var longest = Math.max(widthAt(size, rows[0]), widthAt(size, rows[1]));
+        if (longest > w - 4) size = Math.max(8, Math.round(size * (w - 4) / longest));
+      }
+    }
+    ctx.font = "700 " + size + "px " + face;
+    ctx.fillStyle = ink;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    if (rows.length === 1) {
+      ctx.fillText(rows[0], box.x0 + 2, box.y0 + h / 2, w - 3);
+    } else {
+      ctx.fillText(rows[0], box.x0 + 2, box.y0 + h * 0.28, w - 3);
+      ctx.fillText(rows[1], box.x0 + 2, box.y0 + h * 0.74, w - 3);
+    }
+  }
+
+  /* 줄마다 번역해서 사진 위에 덮어쓴다 */
+  function overlayLines(color, lines, from, to, onStep) {
+    var ctx = color.getContext("2d", { willReadFrequently: true });
+    var W = color.width, H = color.height;
+    var done = 0;
+    var queue = lines.slice();
+
+    function one(item) {
+      return translateText(item.text, from, to).then(function (out) {
+        item.out = out;
+        var bg = boxBackground(ctx, item.box, W, H);
+        var pad = 2;
+        ctx.fillStyle = "rgb(" + bg.r + "," + bg.g + "," + bg.b + ")";
+        ctx.fillRect(item.box.x0 - pad, item.box.y0 - pad,
+                     (item.box.x1 - item.box.x0) + pad * 2, (item.box.y1 - item.box.y0) + pad * 2);
+        drawInBox(ctx, out, item.box, bg);
+      })["catch"](function () { item.out = ""; })
+        .then(function () {
+          done++;
+          if (onStep) onStep(done, lines.length);
+        });
+    }
+
+    /* 한 번에 세 줄씩 (한꺼번에 너무 많이 부르지 않게) */
+    function run() {
+      var batch = queue.splice(0, 3).map(one);
+      if (!batch.length) return Promise.resolve();
+      return Promise.all(batch).then(run);
+    }
+    return run().then(function () { return color; });
+  }
+
 
   /* 한자 사이에 끼는 공백을 없앤다 (있으면 번역이 이상해진다) */
   function ocrClean(text) {
@@ -2541,25 +2692,104 @@
 
     function readPhoto(file) {
       var wait = waitBox();
-      var started = Date.now();
+      var prep = null;
       ocrReady(function (status, pct) {
         /* 준비(다운로드)와 읽기를 나눠서 보여준다 */
         wait.set(status === "recognizing text" ? t("ocrReading") : t("ocrReady"), pct);
       }).then(function (worker) {
         wait.set(t("ocrReading"), 0.05);
-        return ocrPrepare(file).then(function (canvas) {
-          return worker.recognize(canvas);
+        return ocrPrepare(file).then(function (p) {
+          prep = p;
+          return worker.recognize(p.gray);
         });
       }).then(function (res) {
-        wait.done();
-        var text = ocrClean(res && res.data && res.data.text);
-        if (!text) { toast(t("ocrNone")); return; }
-        editFound(text);
+        var lines = ocrLines(res);
+        if (!lines.length) { wait.done(); toast(t("ocrNone")); return null; }
+
+        /* 원본을 한 장 남겨두고(비교용) 사본 위에 번역문을 덮는다 */
+        var orig = document.createElement("canvas");
+        orig.width = prep.w; orig.height = prep.h;
+        orig.getContext("2d").drawImage(prep.color, 0, 0);
+
+        wait.set(t("ocrDrawing", 0, lines.length), 0);
+        return overlayLines(prep.color, lines, talk, lang, function (a, b) {
+          wait.set(t("ocrDrawing", a, b), a / b);
+        }).then(function (over) {
+          wait.done();
+          showShot(orig, over, lines);
+        });
       })["catch"](function () {
         wait.done();
         toast(t("ocrNone"));
       });
-      return started;
+    }
+
+    /* 번역해서 덮어쓴 사진 보여주기 */
+    function showShot(orig, over, lines) {
+      var overURL = over.toDataURL("image/jpeg", 0.92);
+      var origURL = orig.toDataURL("image/jpeg", 0.92);
+      var showing = "over";
+
+      var back = document.createElement("div");
+      back.className = "shot-back";
+      back.innerHTML =
+        '<div class="shot-top">' +
+          '<button data-x="1">' + esc(t("close")) + '</button>' +
+          '<span class="grow"></span>' +
+          '<button data-swap="1"></button>' +
+        '</div>' +
+        '<div class="shot-view"><img alt=""></div>' +
+        '<div class="shot-foot">' +
+          '<button data-text="1">' + esc(t("ocrText")) + '</button>' +
+          '<button data-memo="1">' + esc(t("ocrMemo")) + '</button>' +
+          '<button data-save="1">' + esc(t("ocrSave")) + '</button>' +
+        '</div>';
+
+      var img = back.querySelector("img");
+      var label = back.querySelector(".grow");
+      var swapBtn = back.querySelector("[data-swap]");
+      function paint() {
+        img.src = showing === "over" ? overURL : origURL;
+        label.textContent = showing === "over" ? t("ocrOver") : t("ocrOrig");
+        swapBtn.textContent = showing === "over" ? t("ocrOrig") : t("ocrOver");
+      }
+      paint();
+
+      function memoLine() {
+        return lines.map(function (l) {
+          return l.out ? (l.out + " (" + l.text + ")") : l.text;
+        }).join("\n");
+      }
+
+      back.addEventListener("click", function (e) {
+        if (e.target.closest("[data-x]")) { back.remove(); return; }
+        if (e.target.closest("[data-swap]")) { showing = showing === "over" ? "orig" : "over"; paint(); return; }
+        if (e.target.closest("[data-text]")) { editFound(lines.map(function (l) { return l.text; }).join("\n")); return; }
+        if (e.target.closest("[data-memo]")) { memoPick(memoLine()); return; }
+        if (e.target.closest("[data-save]")) { saveShot(over); return; }
+      });
+      document.body.appendChild(back);
+    }
+
+    function saveShot(canvas) {
+      canvas.toBlob(function (blob) {
+        if (!blob) return;
+        var d = new Date();
+        var stamp = d.getFullYear() + ("0" + (d.getMonth() + 1)).slice(-2) + ("0" + d.getDate()).slice(-2) +
+          "-" + ("0" + d.getHours()).slice(-2) + ("0" + d.getMinutes()).slice(-2);
+        var name = "translated-" + stamp + ".jpg";
+        /* 폰에서는 공유창으로 넘겨주는 쪽이 저장·전송 모두 편하다 */
+        try {
+          if (window.File && navigator.canShare && navigator.share) {
+            var file = new File([blob], name, { type: "image/jpeg" });
+            if (navigator.canShare({ files: [file] })) {
+              navigator.share({ files: [file] })["catch"](function () {});
+              return;
+            }
+          }
+        } catch (e) {}
+        downloadBlob(blob, name);
+      }, "image/jpeg", 0.92);
     }
 
     /* 잘못 읽은 글자를 사람이 고친 뒤 번역한다 */
