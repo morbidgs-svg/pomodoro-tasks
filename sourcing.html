@@ -661,6 +661,7 @@
 <input type="file" id="fileAlbum" accept="image/*" class="hidden">
 <input type="file" id="fileRestore" accept="application/json,.json" class="hidden">
 <input type="file" id="fileOcr" accept="image/*" class="hidden">
+<input type="file" id="fileOcrCam" accept="image/*" capture="environment" class="hidden">
 
 <div class="toast" id="toast"></div>
 
@@ -2682,9 +2683,28 @@
       push(side === "me", text);
     }
 
-    /* 사진 → 글자 읽기 → 고치기 → 번역 */
-    function pickPhoto() {
-      var picker = document.getElementById("fileOcr");
+    /* 사진 → 글자 읽기 → 번역해서 덮어쓰기 */
+    function pickShot() {
+      var sheet = document.createElement("div");
+      sheet.className = "backdrop over";
+      sheet.innerHTML = '<div class="sheet"><h3>' + esc(t("ocrBtn")) + '</h3>' +
+        '<button class="sheet-item" data-pick="cam"><span class="grow">' + esc(t("photoCamera")) + '</span></button>' +
+        '<button class="sheet-item" data-pick="album"><span class="grow">' + esc(t("photoAlbum")) + '</span></button>' +
+        '<button class="sheet-item" data-pick="cancel"><span class="grow" style="color:var(--muted)">' +
+          esc(t("cancel")) + '</span></button></div>';
+      sheet.addEventListener("click", function (e) {
+        var btn = e.target.closest("[data-pick]");
+        if (!btn && e.target !== sheet) return;
+        var which = btn ? btn.dataset.pick : "cancel";
+        sheet.remove();
+        if (which === "cam") openShotPicker("fileOcrCam");
+        else if (which === "album") openShotPicker("fileOcr");
+      });
+      document.body.appendChild(sheet);
+    }
+
+    function openShotPicker(id) {
+      var picker = document.getElementById(id);
       picker.value = "";
       picker.onchange = function () {
         var file = picker.files && picker.files[0];
@@ -2855,7 +2875,7 @@
       if (e.target.closest("[data-clear]")) { log = []; draw(); return; }
       if (e.target.closest("[data-side]")) { side = side === "me" ? "you" : "me"; drawButtons(); input.focus(); return; }
       if (e.target.closest("[data-send]")) { sendTyped(); return; }
-      if (e.target.closest("[data-shot]")) { pickPhoto(); return; }
+      if (e.target.closest("[data-shot]")) { pickShot(); return; }
       var say = e.target.closest("[data-say]");
       if (say) { var a = log[+say.dataset.say]; if (a) speakIn(a.dst, a.to); return; }
       var big = e.target.closest("[data-big]");
