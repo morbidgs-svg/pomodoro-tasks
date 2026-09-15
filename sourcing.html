@@ -279,6 +279,7 @@
   .bottombar .indicator b { color: var(--text); font-size: 15px; }
 
   /* ── 시트 / 모달 ── */
+  .backdrop.over { z-index: 70; }     /* 대화 번역 화면 위에 뜨는 시트 */
   .backdrop {
     position: fixed; inset: 0; z-index: 40;
     background: rgba(0,0,0,0.45);
@@ -333,6 +334,52 @@
     position: fixed; inset: 0; z-index: 60;
     background: var(--bg); display: flex; flex-direction: column;
   }
+  /* ── 대화 번역 ── */
+  .trans-back { position: fixed; inset: 0; z-index: 60; background: var(--bg); display: flex; flex-direction: column; }
+  .trans-bar {
+    flex: none; display: flex; align-items: center; gap: 8px;
+    padding: calc(10px + env(safe-area-inset-top, 0px)) 14px 10px;
+    background: var(--card); border-bottom: 1px solid var(--border);
+  }
+  .trans-pair { flex: 1; min-width: 0; font-size: 15px; font-weight: 700; text-align: center; }
+  .trans-bar .mini {
+    flex: none; border: 1px solid var(--border); background: var(--bg); color: var(--muted);
+    border-radius: 10px; padding: 7px 10px; font-size: 13px; font-weight: 600;
+  }
+  .trans-body { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+  .trans-empty { margin: auto; text-align: center; color: var(--muted); font-size: 14px; line-height: 1.8; white-space: pre-line; }
+  .bub { max-width: 90%; border-radius: 16px; padding: 10px 12px; background: var(--card); box-shadow: var(--shadow); }
+  .bub.me { align-self: flex-end; background: var(--accent-soft); }
+  .bub.you { align-self: flex-start; }
+  .bub .src { font-size: 12px; color: var(--muted); line-height: 1.5; margin-bottom: 4px; }
+  .bub .dst { font-size: 19px; font-weight: 700; line-height: 1.45; word-break: keep-all; }
+  .bub.wait .dst, .bub.fail .dst { font-size: 14px; font-weight: 600; color: var(--muted); }
+  .bub .acts { display: flex; gap: 6px; margin-top: 8px; }
+  .bub .acts button {
+    border: 1px solid var(--border); background: var(--bg); color: var(--muted);
+    border-radius: 9px; padding: 4px 9px; font-size: 12px; font-weight: 600;
+  }
+  .trans-type { flex: none; display: flex; gap: 6px; padding: 0 14px 8px; }
+  .trans-type .side {
+    flex: none; border: 1px solid var(--border); background: var(--card); color: var(--muted);
+    border-radius: 11px; padding: 8px 10px; font-size: 13px; font-weight: 700;
+  }
+  .trans-type .input { flex: 1; min-width: 0; }
+  .trans-type .send {
+    flex: none; border: 1px solid var(--accent); background: var(--accent); color: #fff;
+    border-radius: 11px; padding: 8px 12px; font-size: 14px; font-weight: 700;
+  }
+  .trans-foot {
+    flex: none; display: flex; gap: 8px;
+    padding: 10px 14px calc(12px + var(--safe-b));
+    background: var(--card); border-top: 1px solid var(--border);
+  }
+  .mic {
+    flex: 1; min-width: 0; border: 1px solid var(--border); background: var(--bg); color: var(--text);
+    border-radius: 14px; padding: 15px 8px; font-size: 15px; font-weight: 700;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .mic.on { background: var(--accent); border-color: var(--accent); color: #fff; }
   .search-bar {
     flex: none; display: flex; align-items: center; gap: 8px;
     padding: calc(10px + env(safe-area-inset-top, 0px)) 14px 10px;
@@ -730,6 +777,14 @@
       talkHint: "💬 로 물어보는 말과 가격 · 최소수량 옆 표시가 이 언어로 바뀝니다.",
       talkSet: function (n) { return "이제 " + n + "로 물어봐요"; },
       searchAria: "업체 검색", menuSearch: "🔍 업체 검색",
+      menuTalk: "🎤 대화 번역",
+      transEmpty: "아래 🎤 를 누르고 말해보세요.\n번역된 말은 화면으로 보여주면 됩니다.",
+      transTyping: "직접 입력", transSend: "번역", transClear: "지우기",
+      transFail: "번역을 못 했어요. 다시 눌러보세요.",
+      transOffline: "인터넷이 없어 번역이 안 돼요. 💬 문장은 그대로 쓸 수 있어요.",
+      transNoSpeech: "소리가 안 들렸어요", transDenied: "마이크 권한을 켜주세요",
+      transNoMic: "이 브라우저는 음성 인식이 안 돼요. 직접 입력해 주세요.",
+      transSaved: "메모에 저장했어요", transPick: "어느 물건 메모에 넣을까요?",
       searchPlaceholder: "업체명 · 메모 · 시장 검색",
       searchHint: "업체명, 메모, 시장 이름, 가격으로 찾을 수 있어요.",
       searchNone: "찾는 내용이 없습니다",
@@ -822,6 +877,14 @@
       talkHint: "The 💬 phrases and the tags beside Price / Min. qty switch to this language.",
       talkSet: function (n) { return "Now asking in " + n; },
       searchAria: "Search vendors", menuSearch: "🔍 Search vendors",
+      menuTalk: "🎤 Live translation",
+      transEmpty: "Tap 🎤 below and speak.\nShow the translated line to the seller.",
+      transTyping: "Type instead", transSend: "Translate", transClear: "Clear",
+      transFail: "Could not translate. Try again.",
+      transOffline: "No internet, so translation is off. The 💬 phrases still work.",
+      transNoSpeech: "I didn't hear anything", transDenied: "Please allow microphone access",
+      transNoMic: "This browser can't listen. Please type instead.",
+      transSaved: "Saved to the memo", transPick: "Which item's memo?",
       searchPlaceholder: "Search vendor, notes, market",
       searchHint: "Search by vendor name, notes, market name or price.",
       searchNone: "No matches",
@@ -914,6 +977,14 @@
       talkHint: "💬 で聞く言葉と、価格・最小ロットの横の表示がこの言語に変わります。",
       talkSet: function (n) { return "これからは" + n + "で聞きます"; },
       searchAria: "業者を検索", menuSearch: "🔍 業者を検索",
+      menuTalk: "🎤 会話翻訳",
+      transEmpty: "下の 🎤 を押して話してください。\n訳した言葉は画面で見せればOKです。",
+      transTyping: "直接入力", transSend: "翻訳", transClear: "消す",
+      transFail: "翻訳できませんでした。もう一度お試しください。",
+      transOffline: "インターネットがないため翻訳できません。💬 の文はそのまま使えます。",
+      transNoSpeech: "音が聞こえませんでした", transDenied: "マイクを許可してください",
+      transNoMic: "このブラウザは音声入力に対応していません。直接入力してください。",
+      transSaved: "メモに保存しました", transPick: "どの商品のメモに入れますか？",
       searchPlaceholder: "業者名・メモ・市場を検索",
       searchHint: "業者名、メモ、市場名、価格で探せます。",
       searchNone: "見つかりませんでした",
@@ -1006,6 +1077,14 @@
       talkHint: "Câu hỏi ở 💬 và nhãn bên cạnh Giá · SL tối thiểu sẽ đổi sang ngôn ngữ này.",
       talkSet: function (n) { return "Bây giờ hỏi bằng " + n; },
       searchAria: "Tìm nhà cung cấp", menuSearch: "🔍 Tìm nhà cung cấp",
+      menuTalk: "🎤 Dịch hội thoại",
+      transEmpty: "Nhấn 🎤 bên dưới rồi nói.\nĐưa màn hình cho người bán xem câu đã dịch.",
+      transTyping: "Gõ trực tiếp", transSend: "Dịch", transClear: "Xoá",
+      transFail: "Không dịch được. Hãy thử lại.",
+      transOffline: "Không có mạng nên không dịch được. Các câu ở 💬 vẫn dùng được.",
+      transNoSpeech: "Không nghe thấy gì", transDenied: "Hãy cho phép dùng micro",
+      transNoMic: "Trình duyệt này không nhận giọng nói. Hãy gõ trực tiếp.",
+      transSaved: "Đã lưu vào ghi chú", transPick: "Lưu vào ghi chú của sản phẩm nào?",
       searchPlaceholder: "Tìm NCC, ghi chú, chợ",
       searchHint: "Tìm theo tên NCC, ghi chú, tên chợ hoặc giá.",
       searchNone: "Không tìm thấy",
@@ -1098,6 +1177,14 @@
       talkHint: "💬 里的句子，以及价格 · 起订量旁边的标签都会换成这个语言。",
       talkSet: function (n) { return "现在用" + n + "询问"; },
       searchAria: "搜索商家", menuSearch: "🔍 搜索商家",
+      menuTalk: "🎤 对话翻译",
+      transEmpty: "点下面的 🎤 说话。\n把翻译好的话给对方看就行。",
+      transTyping: "直接输入", transSend: "翻译", transClear: "清空",
+      transFail: "翻译失败，请再试一次。",
+      transOffline: "没有网络，无法翻译。💬 里的句子仍然可用。",
+      transNoSpeech: "没有听到声音", transDenied: "请允许使用麦克风",
+      transNoMic: "这个浏览器不支持语音输入，请直接输入。",
+      transSaved: "已保存到备注", transPick: "保存到哪个货品的备注？",
       searchPlaceholder: "搜索商家 · 备注 · 市场",
       searchHint: "可以按商家名称、备注、市场名称或价格搜索。",
       searchNone: "没有找到",
@@ -1400,22 +1487,27 @@
     { title: "groupContact", keys: ["shipTime", "shipHome", "card", "wechat"] }
   ];
 
-  var sayVoices = { zh: null, en: null };
+  var VOICE_CODES = ["ko", "en", "ja", "vi", "zh"];
+  var VOICE_TAG = { ko: "ko-KR", en: "en-US", ja: "ja-JP", vi: "vi-VN", zh: "zh-CN" };
+  var VOICE_HINT = { ko: ["kr"], en: ["us"], ja: ["jp"], vi: ["vn"], zh: ["cn", "hans"] };
+  var sayVoices = {};
   function pickVoice(code) {
     if (!window.speechSynthesis || !speechSynthesis.getVoices) return null;
     var list = speechSynthesis.getVoices() || [];
+    var hints = VOICE_HINT[code] || [];
     var fallback = null;
     for (var i = 0; i < list.length; i++) {
       var vl = String(list[i].lang || "").toLowerCase().replace(/_/g, "-");
       if (vl.indexOf(code) !== 0) continue;
-      if (code === "zh" ? (vl.indexOf("cn") > -1 || vl.indexOf("hans") > -1) : (vl.indexOf("us") > -1)) return list[i];
+      for (var h = 0; h < hints.length; h++) {
+        if (vl.indexOf(hints[h]) > -1) return list[i];
+      }
       if (!fallback) fallback = list[i];
     }
     return fallback;
   }
   function refreshVoices() {
-    sayVoices.zh = pickVoice("zh");
-    sayVoices.en = pickVoice("en");
+    VOICE_CODES.forEach(function (c) { sayVoices[c] = pickVoice(c); });
   }
   if (window.speechSynthesis) {
     try {
@@ -1424,22 +1516,23 @@
     } catch (e) {}
   }
 
-  function speakSay(text) {
-    if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) return false;
+  function speakIn(text, code) {
+    if (!text || !window.speechSynthesis || !window.SpeechSynthesisUtterance) return false;
     try {
       speechSynthesis.cancel();
       var u = new SpeechSynthesisUtterance(text);
-      u.lang = talk === "en" ? "en-US" : "zh-CN";
-      if (!sayVoices[talk]) sayVoices[talk] = pickVoice(talk);
+      u.lang = VOICE_TAG[code] || "zh-CN";
+      if (!sayVoices[code]) sayVoices[code] = pickVoice(code);
       /* 목소리 지정이 실패해도(브라우저마다 다름) 읽기 자체는 계속되도록 */
-      if (sayVoices[talk]) { try { u.voice = sayVoices[talk]; } catch (e) {} }
-      u.rate = talk === "en" ? 0.9 : 0.85;
+      if (sayVoices[code]) { try { u.voice = sayVoices[code]; } catch (e) {} }
+      u.rate = code === "zh" ? 0.85 : 0.9;
       speechSynthesis.speak(u);
       return true;
     } catch (e) {
       return false;
     }
   }
+  function speakSay(text) { return speakIn(text, talk); }
 
   /* 소리가 안 들리는 시장에서도 쓰도록 문장을 크게 띄워 보여준다 */
   function openPhrase(key) {
@@ -1484,7 +1577,8 @@
       var html = '<div class="sheet">' +
         '<div class="seg">' + TALKS.map(function (l) {
           return '<button data-talk="' + l.code + '"' + (l.code === talk ? ' class="on"' : "") + '>' + esc(l.name) + '</button>';
-        }).join("") + '</div>';
+        }).join("") + '</div>' +
+        '<button class="sheet-item" data-talkbtn="1"><span class="grow">' + esc(t("menuTalk")) + '</span><span class="sub">🎤</span></button>';
       PHRASE_GROUPS.forEach(function (g) {
         html += '<h3>' + esc(t(g.title)) + '</h3>';
         g.keys.forEach(function (k) {
@@ -1504,6 +1598,7 @@
     back.addEventListener("click", function (e) {
       var seg = e.target.closest("[data-talk]");
       if (seg) { setTalk(seg.dataset.talk); draw(); return; }
+      if (e.target.closest("[data-talkbtn]")) { back.remove(); openTranslator(); return; }
       var row = e.target.closest("[data-phrase]");
       if (row) { openPhrase(row.dataset.phrase); return; }   /* 목록은 열어둔 채 카드만 띄운다 */
       if (e.target === back) back.remove();
@@ -1512,6 +1607,361 @@
   }
 
   document.getElementById("phraseBtn").addEventListener("click", openPhraseList);
+
+  /* ────────── 대화 번역 ────────── */
+  /* 번역은 이 폰에서 바로 부른다. 크롬에 번역기가 내장돼 있으면 그걸 먼저 쓰고(공짜·빠름),
+     없으면 공개 번역 API로 넘어간다. 내 번역 서버가 생기면 TRANS_ENDPOINT 에 주소만 넣으면 된다. */
+  var TRANS_ENDPOINT = "";
+  var MM_LANG = { ko: "ko", en: "en", ja: "ja", vi: "vi", zh: "zh-CN" };
+  var transCache = {};
+
+  function withTimeout(p, ms) {
+    return new Promise(function (resolve, reject) {
+      var done = false;
+      var timer = setTimeout(function () { if (!done) { done = true; reject(new Error("timeout")); } }, ms);
+      Promise.resolve(p).then(function (v) {
+        if (done) return;
+        done = true; clearTimeout(timer); resolve(v);
+      }, function (e) {
+        if (done) return;
+        done = true; clearTimeout(timer); reject(e);
+      });
+    });
+  }
+
+  /* 크롬 내장 번역기. 번역팩이 이미 폰에 깔려 있을 때만 쓴다 —
+     안 깔려 있으면 create() 가 몇 분씩 다운로드를 붙들고 있어서 시장에서 멈춘 것처럼 보인다 */
+  var builtinReady = {};
+  function builtinCheck(from, to) {
+    var key = from + ">" + to;
+    if (builtinReady[key] !== undefined) return Promise.resolve(builtinReady[key]);
+    var api = window.Translator || window.translation || null;
+    var ask = null;
+    try {
+      if (api && typeof api.availability === "function") ask = api.availability({ sourceLanguage: from, targetLanguage: to });
+      else if (api && typeof api.canTranslate === "function") ask = api.canTranslate({ sourceLanguage: from, targetLanguage: to });
+    } catch (e) { ask = null; }
+    if (!ask) { builtinReady[key] = false; return Promise.resolve(false); }
+    return withTimeout(Promise.resolve(ask), 2500).then(function (v) {
+      v = String(v || "");
+      builtinReady[key] = (v === "available" || v === "readily");
+      return builtinReady[key];
+    })["catch"](function () { builtinReady[key] = false; return false; });
+  }
+  function builtinTranslate(text, from, to) {
+    return builtinCheck(from, to).then(function (ok) {
+      if (!ok) throw new Error("no-builtin");
+      var api = window.Translator || window.translation;
+      var maker = api.create ? api.create({ sourceLanguage: from, targetLanguage: to })
+                             : api.createTranslator({ sourceLanguage: from, targetLanguage: to });
+      return withTimeout(Promise.resolve(maker).then(function (tr) { return tr.translate(text); }), 6000);
+    });
+  }
+
+  function webTranslate(text, from, to) {
+    var url;
+    if (TRANS_ENDPOINT) {
+      url = TRANS_ENDPOINT + (TRANS_ENDPOINT.indexOf("?") > -1 ? "&" : "?") +
+        "q=" + encodeURIComponent(text) + "&source=" + encodeURIComponent(from) + "&target=" + encodeURIComponent(to);
+    } else {
+      url = "https://api.mymemory.translated.net/get?q=" + encodeURIComponent(text) +
+        "&langpair=" + encodeURIComponent((MM_LANG[from] || from) + "|" + (MM_LANG[to] || to));
+    }
+    return fetch(url).then(function (r) {
+      if (!r.ok) throw new Error("http " + r.status);
+      return r.json();
+    }).then(function (d) {
+      var out = (d && d.responseData && d.responseData.translatedText) || (d && d.translatedText) || "";
+      /* 한도를 넘기면 번역문 자리에 경고문이 온다 */
+      if (!out || /MYMEMORY WARNING|QUERY LENGTH|INVALID|PLEASE SELECT/i.test(out)) throw new Error("bad");
+      return out;
+    });
+  }
+
+  function translateText(text, from, to) {
+    text = String(text || "").trim();
+    if (!text) return Promise.reject(new Error("empty"));
+    if (from === to) return Promise.resolve(text);
+    var key = from + ">" + to + ">" + text;
+    if (transCache[key]) return Promise.resolve(transCache[key]);
+    return builtinTranslate(text, from, to)["catch"](function () {
+      if (navigator.onLine === false) throw new Error("offline");
+      return withTimeout(webTranslate(text, from, to), 10000);
+    }).then(function (out) {
+      out = String(out || "").trim();
+      if (!out) throw new Error("empty");
+      transCache[key] = out;
+      return out;
+    });
+  }
+
+  /* 음성 인식. 브라우저가 지원할 때만 쓰고, 안 되면 직접 입력으로 넘긴다 */
+  function listen(tag, on) {
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { on.error("nosupport"); return null; }
+    if (window.speechSynthesis) { try { speechSynthesis.cancel(); } catch (e) {} }
+    var rec;
+    try { rec = new SR(); } catch (e) { on.error("nosupport"); return null; }
+    rec.lang = tag;
+    rec.interimResults = true;
+    rec.maxAlternatives = 1;
+    rec.continuous = false;
+    var fin = "", failed = false;
+    rec.onresult = function (e) {
+      var live = "";
+      for (var i = e.resultIndex; i < e.results.length; i++) {
+        var r = e.results[i];
+        if (r.isFinal) fin += r[0].transcript;
+        else live += r[0].transcript;
+      }
+      on.partial((fin + live).trim());
+    };
+    rec.onerror = function (e) { failed = true; on.error((e && e.error) || "error"); };
+    rec.onend = function () { if (!failed) on.done(fin.trim()); };
+    try { rec.start(); } catch (e) { failed = true; on.error("busy"); return null; }
+    return rec;
+  }
+
+  function myLangName() {
+    for (var i = 0; i < LANGS.length; i++) { if (LANGS[i].code === lang) return LANGS[i].name; }
+    return lang;
+  }
+  function talkLangName() {
+    for (var i = 0; i < TALKS.length; i++) { if (TALKS[i].code === talk) return TALKS[i].name; }
+    return talk;
+  }
+
+  function openTranslator() {
+    var log = [];
+    var rec = null, listening = "", side = "me";
+
+    var back = document.createElement("div");
+    back.className = "trans-back";
+    back.innerHTML =
+      '<div class="trans-bar">' +
+        '<button class="mini" data-shut="1">' + esc(t("close")) + '</button>' +
+        '<div class="trans-pair">' + esc(myLangName() + " ⇄ " + talkLangName()) + '</div>' +
+        '<button class="mini" data-clear="1">' + esc(t("transClear")) + '</button>' +
+      '</div>' +
+      '<div class="trans-body"></div>' +
+      '<div class="trans-type">' +
+        '<button class="side" data-side="1"></button>' +
+        '<input class="input" type="text" placeholder="' + esc(t("transTyping")) + '" autocomplete="off">' +
+        '<button class="send" data-send="1">' + esc(t("transSend")) + '</button>' +
+      '</div>' +
+      '<div class="trans-foot">' +
+        '<button class="mic" data-mic="me"></button>' +
+        '<button class="mic" data-mic="you"></button>' +
+      '</div>';
+
+    var body = back.querySelector(".trans-body");
+    var input = back.querySelector(".trans-type .input");
+    var sideBtn = back.querySelector("[data-side]");
+    var micMe = back.querySelector('[data-mic="me"]');
+    var micYou = back.querySelector('[data-mic="you"]');
+
+    function drawButtons() {
+      sideBtn.textContent = side === "me" ? myLangName() : talkLangName();
+      micMe.textContent = (listening === "me" ? "⏺ " : "🎤 ") + myLangName();
+      micYou.textContent = (listening === "you" ? "⏺ " : "🎤 ") + talkLangName();
+      micMe.className = "mic" + (listening === "me" ? " on" : "");
+      micYou.className = "mic" + (listening === "you" ? " on" : "");
+    }
+
+    function draw() {
+      if (!log.length) {
+        body.innerHTML = '<div class="trans-empty">' + esc(t("transEmpty")) + '</div>';
+        return;
+      }
+      body.innerHTML = log.map(function (m, i) {
+        return '<div class="bub ' + (m.mine ? "me" : "you") + (m.state === "ok" ? "" : " " + m.state) + '">' +
+          '<div class="src">' + esc(m.src) + '</div>' +
+          '<div class="dst">' + esc(m.state === "wait" ? "…" : m.dst) + '</div>' +
+          (m.state === "ok" ?
+            '<div class="acts">' +
+              '<button data-say="' + i + '">🔊</button>' +
+              '<button data-big="' + i + '">⤢</button>' +
+              '<button data-memo="' + i + '">📌</button>' +
+            '</div>' : "") +
+          (m.state === "fail" ? '<div class="acts"><button data-retry="' + i + '">↻</button></div>' : "") +
+          '</div>';
+      }).join("");
+      body.scrollTop = body.scrollHeight;
+    }
+
+    function run(m) {
+      m.state = "wait";
+      draw();
+      translateText(m.src, m.from, m.to).then(function (out) {
+        m.dst = out;
+        m.state = "ok";
+        draw();
+        speakIn(out, m.to);
+      })["catch"](function (e) {
+        m.state = "fail";
+        m.dst = (navigator.onLine === false || String((e && e.message) || "") === "offline") ? t("transOffline") : t("transFail");
+        draw();
+      });
+    }
+
+    function push(mine, text) {
+      var m = { mine: mine, src: text, dst: "", from: mine ? lang : talk, to: mine ? talk : lang, state: "wait" };
+      log.push(m);
+      run(m);
+      return m;
+    }
+
+    function micError(kind) {
+      if (kind === "not-allowed" || kind === "service-not-allowed") return t("transDenied");
+      if (kind === "no-speech" || kind === "aborted") return t("transNoSpeech");
+      if (kind === "nosupport") return t("transNoMic");
+      if (kind === "network") return t("transOffline");
+      return t("transFail");
+    }
+
+    function stopMic() {
+      if (rec) { try { rec.stop(); } catch (e) {} rec = null; }
+      listening = "";
+      drawButtons();
+    }
+
+    function startMic(which) {
+      if (listening === which) { stopMic(); return; }
+      stopMic();
+      var mine = which === "me";
+      var from = mine ? lang : talk;
+      var draft = null;
+      listening = which;
+      drawButtons();
+
+      function drop() {
+        if (!draft) return;
+        var at = log.indexOf(draft);
+        if (at > -1) log.splice(at, 1);
+        draft = null;
+        draw();
+      }
+
+      rec = listen(VOICE_TAG[from] || "zh-CN", {
+        partial: function (txt) {
+          if (!txt) return;
+          if (!draft) {
+            draft = { mine: mine, src: txt, dst: "", from: from, to: mine ? talk : lang, state: "wait" };
+            log.push(draft);
+          }
+          draft.src = txt;
+          draw();
+        },
+        error: function (kind) {
+          drop();
+          rec = null; listening = ""; drawButtons();
+          toast(micError(kind));
+        },
+        done: function (txt) {
+          rec = null; listening = ""; drawButtons();
+          if (!txt) { drop(); toast(t("transNoSpeech")); return; }
+          if (!draft) {
+            draft = { mine: mine, src: txt, dst: "", from: from, to: mine ? talk : lang, state: "wait" };
+            log.push(draft);
+          }
+          draft.src = txt;
+          run(draft);
+        }
+      });
+      if (!rec) { listening = ""; drawButtons(); }
+    }
+
+    function appendMemo(it, line) {
+      if (!it) return;
+      it.memo = (it.memo ? it.memo + "\n" : "") + line;
+      save();
+      render();
+      toast(t("transSaved"));
+    }
+
+    /* 나눈 말을 그 자리에서 업체 메모로 남긴다 — 이게 통역 앱과 다른 점 */
+    function saveMemo(m) {
+      var v = vendor();
+      var line = m.mine ? m.src : (m.dst + " (" + m.src + ")");
+      var items = v.items || [];
+      if (items.length <= 1) { appendMemo(items[0], line); return; }
+      var pick = document.createElement("div");
+      pick.className = "backdrop over";
+      pick.innerHTML = '<div class="sheet"><h3>' + esc(t("transPick")) + '</h3>' +
+        items.map(function (it, i) {
+          var sub = String(it.memo || it.price || "").split("\n")[0];
+          return '<button class="sheet-item" data-pick="' + i + '"><span class="grow">' +
+            esc(t("itemChip", i + 1) + (sub ? " · " + sub : "")) + '</span></button>';
+        }).join("") + '</div>';
+      pick.addEventListener("click", function (e) {
+        var row = e.target.closest("[data-pick]");
+        if (row) { pick.remove(); appendMemo(items[+row.dataset.pick], line); return; }
+        if (e.target === pick) pick.remove();
+      });
+      document.body.appendChild(pick);
+    }
+
+    function bigCard(m) {
+      var card = document.createElement("div");
+      card.className = "backdrop over center";
+      card.innerHTML = '<div class="phrase">' +
+        '<div class="zh' + (m.to === "en" ? " en" : "") + '">' + esc(m.dst) + '</div>' +
+        '<div class="ko">' + esc(m.src) + '</div>' +
+        '<div class="note">' + t("noteQuiet") + '</div>' +
+        '<div class="btns">' +
+          '<button data-x="1">' + esc(t("close")) + '</button>' +
+          '<button class="primary" data-again="1">' + esc(t("again")) + '</button>' +
+        '</div></div>';
+      card.addEventListener("click", function (e) {
+        if (e.target.closest("[data-again]")) { speakIn(m.dst, m.to); return; }
+        if (e.target.closest("[data-x]") || e.target === card) {
+          if (window.speechSynthesis) { try { speechSynthesis.cancel(); } catch (err) {} }
+          card.remove();
+        }
+      });
+      document.body.appendChild(card);
+      speakIn(m.dst, m.to);
+    }
+
+    function sendTyped() {
+      var text = input.value.trim();
+      if (!text) return;
+      input.value = "";
+      push(side === "me", text);
+    }
+
+    function close() {
+      stopMic();
+      if (window.speechSynthesis) { try { speechSynthesis.cancel(); } catch (e) {} }
+      document.removeEventListener("keydown", onKey);
+      back.remove();
+    }
+    function onKey(e) { if (e.key === "Escape") close(); }
+
+    back.addEventListener("click", function (e) {
+      if (e.target.closest("[data-shut]")) { close(); return; }
+      if (e.target.closest("[data-clear]")) { log = []; draw(); return; }
+      if (e.target.closest("[data-side]")) { side = side === "me" ? "you" : "me"; drawButtons(); input.focus(); return; }
+      if (e.target.closest("[data-send]")) { sendTyped(); return; }
+      var mic = e.target.closest("[data-mic]");
+      if (mic) { startMic(mic.dataset.mic); return; }
+      var say = e.target.closest("[data-say]");
+      if (say) { var a = log[+say.dataset.say]; if (a) speakIn(a.dst, a.to); return; }
+      var big = e.target.closest("[data-big]");
+      if (big) { var b = log[+big.dataset.big]; if (b) bigCard(b); return; }
+      var memo = e.target.closest("[data-memo]");
+      if (memo) { var c = log[+memo.dataset.memo]; if (c) saveMemo(c); return; }
+      var again = e.target.closest("[data-retry]");
+      if (again) { var d = log[+again.dataset.retry]; if (d) run(d); return; }
+    });
+    input.addEventListener("keydown", function (e) { if (e.key === "Enter") sendTyped(); });
+    document.addEventListener("keydown", onKey);
+
+    drawButtons();
+    draw();
+    document.body.appendChild(back);
+  }
+
 
   /* ────────── 렌더 ────────── */
   var page = document.getElementById("page");
@@ -2055,6 +2505,7 @@
       '<h3>' + esc(t("vendorsHead", marketLabel(market(), state.currentMarket), vendors().length)) + '</h3>' + list +
       '<button class="sheet-item" data-act="add"><span class="grow">' + esc(t("addVendorRow")) + '</span></button>' +
       '<h3>' + esc(t("manage")) + '</h3>' +
+      '<button class="sheet-item" data-act="talk"><span class="grow">' + esc(t("menuTalk")) + '</span></button>' +
       '<button class="sheet-item" data-act="search"><span class="grow">' + esc(t("menuSearch")) + '</span></button>' +
       '<button class="sheet-item" data-act="copy"><span class="grow">' + esc(t("menuCopy")) + '</span></button>' +
       '<button class="sheet-item" data-act="excel"><span class="grow">' + esc(t("menuExcel")) + '</span></button>' +
@@ -2088,6 +2539,8 @@
       state.markets.push(newMarket());
       goToMarket(state.markets.length - 1);
       toast(t("marketAdded"));
+    } else if (act === "talk") {
+      openTranslator();
     } else if (act === "search") {
       openSearch();
     } else if (act === "copy") {
