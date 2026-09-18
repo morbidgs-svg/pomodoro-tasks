@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>저장 상태 확인 · 아이템 소싱 노트</title>
+<link rel="icon" href="icon-192.png">
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #fff; --line: #e3e6ea; --text: #1b1d21; --dim: #6b7280;
+    --accent: #2f6df6; --ok: #0f8a4a; --okbg: #e8f7ee; --bad: #c62828; --badbg: #fdecec;
+    --safe-b: env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    padding: 16px 16px calc(28px + var(--safe-b));
+  }
+  h1 { font-size: 19px; margin: 4px 0 2px; }
+  .sub { color: var(--dim); font-size: 13px; margin-bottom: 16px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin-bottom: 12px; }
+  .status { font-size: 17px; font-weight: 700; margin: 0 0 6px; }
+  .card.ok { background: var(--okbg); border-color: #b7e3c8; }
+  .card.ok .status { color: var(--ok); }
+  .card.bad { background: var(--badbg); border-color: #f3c4c4; }
+  .card.bad .status { color: var(--bad); }
+  .nums { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .num { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; min-width: 76px; text-align: center; }
+  .num b { display: block; font-size: 20px; line-height: 1.2; }
+  .num span { font-size: 12px; color: var(--dim); }
+  button, .btn {
+    display: block; width: 100%; padding: 15px 16px; margin-top: 10px;
+    border: 0; border-radius: 12px; background: var(--accent); color: #fff;
+    font-size: 16px; font-weight: 600; text-align: center; text-decoration: none;
+    cursor: pointer; touch-action: manipulation;
+  }
+  .btn.ghost { background: #fff; color: var(--text); border: 1px solid var(--line); }
+  button[disabled] { opacity: .5; }
+  [hidden] { display: none !important; }
+  ol, ul { padding-left: 20px; margin: 8px 0 0; }
+  li { margin-bottom: 8px; }
+  h2 { font-size: 15px; margin: 0 0 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  td { padding: 6px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td:first-child { color: var(--dim); width: 42%; }
+  td:last-child { text-align: right; word-break: break-all; }
+  .hint { color: var(--dim); font-size: 13px; margin-top: 10px; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#14161a; --card:#1c1f25; --line:#2c313a; --text:#f2f4f7; --dim:#9aa3af;
+            --okbg:#14301f; --badbg:#331818; }
+    .num { background: #22262d; }
+    .btn.ghost { background: #22262d; }
+  }
+</style>
+</head>
+<body>
+
+<h1>저장 상태 확인 · 복구</h1>
+<div class="sub">이 브라우저에 남아 있는 소싱 노트 데이터를 찾습니다.</div>
+
+<div class="card" id="result">
+  <p class="status" id="status">확인하는 중…</p>
+  <p id="detail">잠시만 기다려 주세요.</p>
+  <div class="nums" id="nums"></div>
+  <button id="save" hidden>💾 백업 파일로 내려받기</button>
+  <div class="hint" id="saveHint" hidden>내려받은 파일은 앱 메뉴(☰) → <b>📂 백업 불러오기</b> 로 되살릴 수 있습니다.</div>
+</div>
+
+<div class="card" id="help" hidden>
+  <h2>데이터가 안 보일 때 확인할 것</h2>
+  <ol>
+    <li><b>같은 브라우저로 열었는지</b> — 소싱 노트는 입력한 브라우저 안에만 저장됩니다.
+        사파리에서 썼으면 사파리, 크롬에서 썼으면 크롬으로 이 페이지를 다시 열어 보세요.</li>
+    <li><b>카카오톡·인스타·네이버 앱 안에서 열지 않았는지</b> — 앱 안의 브라우저는 저장 공간이 따로 있고,
+        창을 닫으면 지워지는 경우가 많습니다. 그때는 그 앱에서 링크를 다시 눌러 이 페이지를 확인해 보세요.</li>
+    <li><b>시크릿(비공개) 모드가 아니었는지</b> — 시크릿 창은 닫는 순간 모두 지워지며 복구할 수 없습니다.</li>
+    <li><b>같은 기기인지</b> — 폰에서 입력한 내용은 PC나 다른 폰에 없습니다.</li>
+  </ol>
+  <div class="hint">위를 모두 확인해도 없다면 그 데이터는 되살릴 수 없습니다. 서버에 올라간 적이 없기 때문입니다.</div>
+</div>
+
+<a class="btn ghost" href="sourcing.html">앱으로 돌아가기</a>
+
+<div class="card" style="margin-top:12px">
+  <h2>진단 정보</h2>
+  <table id="diag"><tr><td>확인 중…</td><td></td></tr></table>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var DB_NAME = "sourcing-db";
+  var elStatus = document.getElementById("status");
+  var elDetail = document.getElementById("detail");
+  var elNums = document.getElementById("nums");
+  var elCard = document.getElementById("result");
+  var elSave = document.getElementById("save");
+  var elSaveHint = document.getElementById("saveHint");
+  var elHelp = document.getElementById("help");
+  var elDiag = document.getElementById("diag");
+
+  var diag = [];
+  function note(k, v) { diag.push([k, v]); }
+  function drawDiag() {
+    elDiag.innerHTML = diag.map(function (r) {
+      return "<tr><td>" + esc(r[0]) + "</td><td>" + esc(r[1]) + "</td></tr>";
+    }).join("");
+  }
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    });
+  }
+  function num(n, label) {
+    return '<div class="num"><b>' + n + "</b><span>" + label + "</span></div>";
+  }
+
+  /* 데이터베이스가 있는지 먼저 본다 (없는데 새로 만들지 않기 위해) */
+  function dbExists() {
+    if (!window.indexedDB) return Promise.resolve(false);
+    if (!indexedDB.databases) return Promise.resolve(null);   /* 사파리 구버전: 알 수 없음 */
+    return indexedDB.databases().then(function (list) {
+      return list.some(function (d) { return d && d.name === DB_NAME; });
+    })["catch"](function () { return null; });
+  }
+
+  function openDB() {
+    return new Promise(function (resolve, reject) {
+      var req = indexedDB.open(DB_NAME);
+      req.onsuccess = function () { resolve(req.result); };
+      req.onerror = function () { reject(req.error); };
+      req.onblocked = function () { reject(new Error("blocked")); };
+    });
+  }
+
+  function getAll(db, store) {
+    return new Promise(function (resolve, reject) {
+      if (!db.objectStoreNames.contains(store)) { resolve({ keys: [], values: [] }); return; }
+      var t = db.transaction(store, "readonly");
+      var s = t.objectStore(store);
+      var keys = [], values = [];
+      var kr = s.getAllKeys ? s.getAllKeys() : null;
+      var vr = s.getAll ? s.getAll() : null;
+      if (kr && vr) {
+        kr.onsuccess = function () { keys = kr.result || []; };
+        vr.onsuccess = function () { values = vr.result || []; };
+      } else {
+        var cur = s.openCursor();
+        cur.onsuccess = function () {
+          var c = cur.result;
+          if (!c) return;
+          keys.push(c.key); values.push(c.value); c["continue"]();
+        };
+      }
+      t.oncomplete = function () { resolve({ keys: keys, values: values }); };
+      t.onerror = function () { reject(t.error); };
+      t.onabort = function () { reject(t.error); };
+    });
+  }
+
+  function countState(st) {
+    var c = { markets: 0, vendors: 0, items: 0, photos: 0 };
+    if (!st) return c;
+    var markets = st.markets || (st.vendors ? [{ vendors: st.vendors }] : []);
+    c.markets = markets.length;
+    markets.forEach(function (m) {
+      (m.vendors || []).forEach(function (v) {
+        c.vendors++;
+        c.photos += (v.cards || []).length;
+        (v.items || []).forEach(function (it) {
+          var has = (it.photos && it.photos.length) ||
+                    String(it.price || "").trim() ||
+                    String(it.moq || "").trim() ||
+                    String(it.memo || "").trim();
+          if (has) c.items++;
+          c.photos += (it.photos || []).length;
+        });
+      });
+    });
+    return c;
+  }
+
+  function blobToDataURL(blob) {
+    return new Promise(function (resolve) {
+      var r = new FileReader();
+      r.onload = function () { resolve(r.result); };
+      r.onerror = function () { resolve(null); };
+      r.readAsDataURL(blob);
+    });
+  }
+
+  function fail(title, msg) {
+    elCard.className = "card bad";
+    elStatus.textContent = title;
+    elDetail.textContent = msg;
+    elHelp.hidden = false;
+  }
+
+  /* ────────── 실행 ────────── */
+
+  note("주소", location.origin + location.pathname.replace(/[^/]*$/, ""));
+  note("IndexedDB", window.indexedDB ? "사용 가능" : "사용 불가 ⚠️");
+
+  if (navigator.storage && navigator.storage.estimate) {
+    navigator.storage.estimate().then(function (e) {
+      var mb = function (n) { return (n / 1048576).toFixed(1) + " MB"; };
+      note("이 사이트가 쓴 용량", e.usage != null ? mb(e.usage) : "알 수 없음");
+      note("브라우저가 허용한 용량", e.quota != null ? mb(e.quota) : "알 수 없음");
+      drawDiag();
+    })["catch"](function () {});
+  }
+  if (navigator.storage && navigator.storage.persisted) {
+    navigator.storage.persisted().then(function (p) {
+      note("영구 저장 지정", p ? "예 (잘 지워지지 않음)" : "아니오 (공간이 부족하면 지워질 수 있음)");
+      drawDiag();
+    })["catch"](function () {});
+  }
+  note("브라우저", navigator.userAgent);
+  drawDiag();
+
+  if (!window.indexedDB) {
+    fail("이 브라우저는 저장 기능을 쓸 수 없습니다",
+         "시크릿 모드이거나, 앱 안에 들어 있는 브라우저일 수 있습니다. 평소 쓰는 브라우저로 다시 열어 주세요.");
+  } else {
+    dbExists().then(function (exists) {
+      note("저장소 존재", exists === null ? "확인 불가(구형 브라우저)" : (exists ? "있음" : "없음"));
+      drawDiag();
+      if (exists === false) {
+        fail("이 브라우저에는 저장된 내용이 없습니다",
+             "한 번도 저장된 적이 없거나, 브라우저가 데이터를 지웠습니다. 아래를 확인해 주세요.");
+        return null;
+      }
+      return openDB().then(function (db) {
+        return Promise.all([getAll(db, "kv"), getAll(db, "images")]).then(function (r) {
+          return { db: db, kv: r[0], images: r[1] };
+        });
+      });
+    }).then(function (res) {
+      if (!res) return;
+      var st = null;
+      res.kv.keys.forEach(function (k, i) { if (k === "state") st = res.kv.values[i]; });
+      var imgCount = res.images.keys.length;
+      var c = countState(st);
+
+      note("사진 파일 수", imgCount + "개");
+      drawDiag();
+
+      if (!st && !imgCount) {
+        fail("이 브라우저에는 저장된 내용이 없습니다",
+             "저장소는 있지만 안이 비어 있습니다. 브라우저가 데이터를 지웠거나, 다른 브라우저에서 입력했을 수 있습니다.");
+        return;
+      }
+
+      elCard.className = "card ok";
+      elStatus.textContent = "데이터가 남아 있습니다 ✅";
+      elDetail.textContent = "아래 버튼으로 백업 파일을 내려받아 두세요. 파일로 받아두면 다른 기기에서도 되살릴 수 있습니다.";
+      elNums.innerHTML =
+        num(c.markets, "시장") + num(c.vendors, "업체") + num(c.items, "물건") + num(imgCount, "사진");
+      elSave.hidden = false;
+      elSaveHint.hidden = false;
+
+      elSave.addEventListener("click", function () {
+        elSave.disabled = true;
+        elSave.textContent = "백업 파일을 만드는 중…";
+        var ids = res.images.keys;
+        Promise.all(res.images.values.map(function (blob) {
+          return (blob && blob.size != null) ? blobToDataURL(blob) : Promise.resolve(null);
+        })).then(function (urls) {
+          var images = {};
+          urls.forEach(function (u, i) { if (u) images[ids[i]] = u; });
+          var payload = {
+            app: "sourcing-note", version: 1,
+            savedAt: new Date().toISOString(),
+            state: st || { markets: [] }, images: images
+          };
+          var blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
+          var d = new Date();
+          var stamp = d.getFullYear() + ("0" + (d.getMonth() + 1)).slice(-2) + ("0" + d.getDate()).slice(-2);
+          var a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = "소싱백업-" + stamp + ".json";
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+          elSave.textContent = "💾 백업 파일을 저장했습니다";
+          elSave.disabled = false;
+        })["catch"](function () {
+          elSave.textContent = "백업에 실패했습니다 — 다시 시도";
+          elSave.disabled = false;
+        });
+      });
+    })["catch"](function (err) {
+      fail("저장소를 열지 못했습니다",
+           "브라우저가 저장을 막고 있을 수 있습니다 (" + (err && err.message ? err.message : "원인 불명") + ").");
+      note("오류", err && err.message ? err.message : String(err));
+      drawDiag();
+    });
+  }
+})();
+</script>
+</body>
+</html>

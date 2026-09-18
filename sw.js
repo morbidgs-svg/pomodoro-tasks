@@ -2,10 +2,11 @@
    시장 안에서 신호가 끊겨도 앱이 열리도록 필요한 파일을 담아둔다.
    화면(HTML)은 인터넷이 되면 항상 새로 받아오고(그래야 업데이트가 바로 반영된다),
    안 되면 담아둔 것을 쓴다. */
-var VERSION = "v1";
+var VERSION = "v2";
 var CACHE = "sourcing-" + VERSION;
 var ASSETS = [
   "sourcing.html",
+  "recover.html",
   "jsqr.min.js",
   "manifest.webmanifest",
   "icon-192.png",
@@ -63,7 +64,11 @@ self.addEventListener("fetch", function (e) {
         resolve(res);
       }
       var timer = setTimeout(function () {
-        caches.match("sourcing.html").then(give);
+        caches.match(req).then(function (hit) {
+          if (hit) { give(hit); return; }
+          /* 소싱 노트 화면일 때만 담아둔 것으로 대신한다 */
+          if (url.pathname.indexOf("sourcing.html") > -1) caches.match("sourcing.html").then(give);
+        });
       }, 2500);
 
       fetch(fresh).then(function (res) {

@@ -629,6 +629,24 @@
   .toast.show { opacity: 1; }
   /* 대화 번역·검색 화면에서는 아래쪽 버튼에 가리지 않게 더 위로 */
   body.has-overlay .toast { bottom: calc(170px + var(--safe-b)); }
+
+  /* 저장이 안 되고 있을 때 계속 떠 있는 경고 (닫히지 않는다) */
+  .store-warn {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 95;
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 14px calc(12px + var(--safe-b));
+    background: #b3261e; color: #fff;
+    box-shadow: 0 -4px 14px rgba(0,0,0,0.22);
+  }
+  .store-warn > div { flex: 1 1 auto; min-width: 0; }
+  .store-warn b { display: block; font-size: 14px; }
+  .store-warn span { display: block; font-size: 12px; line-height: 1.45; opacity: 0.93; }
+  .store-warn button {
+    flex: 0 0 auto; border: 0; border-radius: 10px; padding: 11px 14px;
+    background: #fff; color: #b3261e; font-size: 14px; font-weight: 700;
+    min-height: 44px; touch-action: manipulation;
+  }
+  body.has-warn .toast { bottom: calc(150px + var(--safe-b)); }
   .hidden { display: none !important; }
 </style>
 </head>
@@ -688,6 +706,7 @@
       req.onerror = function () { reject(req.error); };
     })["catch"](function (err) {
       useMemory = true;
+      storageTrouble();
       throw err;
     });
     return dbPromise;
@@ -703,7 +722,10 @@
         t.onabort = function () { reject(t.error); };
       });
     })["catch"](function () {
-      useMemory = true;
+      /* 데이터베이스를 아예 못 열었을 때만 메모리로 내려간다.
+         쓰기 한 번이 실패했다고(용량 부족 등) 저장을 영영 포기하지는 않는다.
+         대신 사용자에게 "지금 저장이 안 된다"고 계속 알린다. */
+      if (mode === "readwrite") storageTrouble();
       return null;
     });
   }
@@ -723,6 +745,55 @@
     delete memFallback[store][key];
     if (useMemory) return Promise.resolve();
     return tx(store, "readwrite", function (s) { return s["delete"](key); });
+  }
+
+  /* 공간이 모자라도 브라우저가 함부로 지우지 않도록 미리 부탁해둔다 */
+  if (navigator.storage && navigator.storage.persist && navigator.storage.persisted) {
+    navigator.storage.persisted().then(function (already) {
+      if (!already) return navigator.storage.persist();
+    })["catch"](function () {});
+  }
+
+  /* 저장이 안 되고 있으면 조용히 넘어가지 않고 화면에 계속 띄운다 */
+  var storageWarned = false;
+  function storageTrouble() {
+    if (storageWarned) return;
+    storageWarned = true;
+    if (document.body) showStorageWarn();
+    else document.addEventListener("DOMContentLoaded", showStorageWarn);
+  }
+  function showStorageWarn() {
+    if (document.getElementById("storeWarn")) return;
+    var bar = document.createElement("div");
+    bar.id = "storeWarn";
+    bar.className = "store-warn";
+    var box = document.createElement("div");
+    var head = document.createElement("b");
+    head.textContent = t("storeWarnTitle");
+    var body = document.createElement("span");
+    body.textContent = t("storeWarnBody");
+    box.appendChild(head);
+    box.appendChild(body);
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = t("storeWarnBtn");
+    btn.addEventListener("click", function () { backup(); });
+    bar.appendChild(box);
+    bar.appendChild(btn);
+    document.body.appendChild(bar);
+    document.body.classList.add("has-warn");
+  }
+
+  /* IndexedDB 가 말썽일 때를 대비한 글자 사본 (사진은 빼고 입력한 내용만) */
+  var MIRROR_KEY = "sourcing-mirror";
+  function mirrorSave(s) {
+    try { localStorage.setItem(MIRROR_KEY, JSON.stringify(s)); } catch (e) {}
+  }
+  function mirrorLoad() {
+    try {
+      var raw = localStorage.getItem(MIRROR_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
   }
 
   /* ────────── 상태 ────────── */
@@ -834,10 +905,23 @@
 
   function save() {
     clearTimeout(saveTimer);
-    saveTimer = setTimeout(function () {
-      dbPut("kv", "state", JSON.parse(JSON.stringify(state)));
-    }, 250);
+    saveTimer = setTimeout(saveNow, 250);
   }
+  function saveNow() {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+    state.savedAt = new Date().toISOString();
+    var copy = JSON.parse(JSON.stringify(state));
+    mirrorSave(copy);
+    return dbPut("kv", "state", copy);
+  }
+  /* 창을 닫거나 다른 앱으로 넘어갈 때, 기다리던 저장을 놓치지 않게 바로 쓴다 */
+  function flushSave() { if (saveTimer) saveNow(); }
+  window.addEventListener("pagehide", flushSave);
+  window.addEventListener("beforeunload", flushSave);
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "hidden") flushSave();
+  });
 
   /* ────────── 사진 처리 ────────── */
   var MAX_DIM = 1400, QUALITY = 0.82;
@@ -959,6 +1043,11 @@
       restored: "백업을 불러왔습니다", restoreFailed: "불러오기에 실패했습니다",
       unreadableFile: "백업 파일을 읽을 수 없습니다", badFile: "형식이 맞지 않는 파일입니다",
       storageWarn: "저장 공간을 쓸 수 없어 임시로 동작합니다",
+      storeWarnTitle: "지금 저장이 안 되고 있습니다",
+      storeWarnBody: "이 브라우저가 저장을 막고 있어요. 지금 백업 파일을 받아두세요. 창을 닫으면 입력한 내용이 사라집니다.",
+      storeWarnBtn: "지금 백업",
+      menuRecover: "🩺 저장 상태 확인 / 복구",
+      mirrorRestored: "저장된 내용이 사라져 사본으로 되살렸습니다 (사진은 빠졌을 수 있어요)",
       xlsxMaking: "엑셀 파일 만드는 중…", xlsxSaved: "엑셀 파일을 저장했습니다", xlsxFailed: "엑셀 저장에 실패했습니다",
       nothingToExport: "내보낼 내용이 없습니다",
       needCardFirst: "먼저 명함 사진을 넣어주세요", qrSearching: "명함에서 QR 찾는 중…",
@@ -1095,6 +1184,11 @@
       restored: "Backup loaded", restoreFailed: "Could not load the backup",
       unreadableFile: "Could not read the backup file", badFile: "That file is not a valid backup",
       storageWarn: "Storage is unavailable — running temporarily without saving",
+      storeWarnTitle: "Nothing is being saved right now",
+      storeWarnBody: "This browser is blocking storage. Save a backup file now — closing the window will lose what you typed.",
+      storeWarnBtn: "Back up now",
+      menuRecover: "🩺 Storage check / recovery",
+      mirrorRestored: "Saved data was gone — restored from a local copy (photos may be missing)",
       xlsxMaking: "Building Excel file…", xlsxSaved: "Excel file saved", xlsxFailed: "Excel export failed",
       nothingToExport: "Nothing to export yet",
       needCardFirst: "Add a business card photo first", qrSearching: "Looking for a QR code…",
@@ -1231,6 +1325,11 @@
       restored: "バックアップを読み込みました", restoreFailed: "読み込みに失敗しました",
       unreadableFile: "バックアップファイルを読めませんでした", badFile: "形式が違うファイルです",
       storageWarn: "保存領域が使えないため、一時的に保存なしで動作します",
+      storeWarnTitle: "今、保存できていません",
+      storeWarnBody: "このブラウザが保存をブロックしています。今すぐバックアップを保存してください。ウィンドウを閉じると入力内容が消えます。",
+      storeWarnBtn: "今すぐバックアップ",
+      menuRecover: "🩺 保存状態の確認 / 復旧",
+      mirrorRestored: "保存データが消えていたため、控えから復元しました（写真は欠けている場合があります）",
       xlsxMaking: "Excelファイルを作成中…", xlsxSaved: "Excelファイルを保存しました", xlsxFailed: "Excelの保存に失敗しました",
       nothingToExport: "書き出す内容がありません",
       needCardFirst: "先に名刺の写真を追加してください", qrSearching: "名刺のQRコードを探しています…",
@@ -1367,6 +1466,11 @@
       restored: "Đã tải bản sao lưu", restoreFailed: "Không tải được bản sao lưu",
       unreadableFile: "Không đọc được tệp sao lưu", badFile: "Tệp không đúng định dạng",
       storageWarn: "Không dùng được bộ nhớ — đang chạy tạm thời, không lưu",
+      storeWarnTitle: "Hiện không lưu được dữ liệu",
+      storeWarnBody: "Trình duyệt này đang chặn bộ nhớ. Hãy tải tệp sao lưu ngay — đóng cửa sổ là mất hết nội dung đã nhập.",
+      storeWarnBtn: "Sao lưu ngay",
+      menuRecover: "🩺 Kiểm tra bộ nhớ / khôi phục",
+      mirrorRestored: "Dữ liệu đã lưu bị mất — đã khôi phục từ bản sao (có thể thiếu ảnh)",
       xlsxMaking: "Đang tạo tệp Excel…", xlsxSaved: "Đã lưu tệp Excel", xlsxFailed: "Xuất Excel thất bại",
       nothingToExport: "Chưa có gì để xuất",
       needCardFirst: "Hãy chụp danh thiếp trước", qrSearching: "Đang tìm mã QR…",
@@ -1503,6 +1607,11 @@
       restored: "已载入备份", restoreFailed: "载入备份失败",
       unreadableFile: "无法读取备份文件", badFile: "文件格式不正确",
       storageWarn: "无法使用存储空间，暂时以不保存的方式运行",
+      storeWarnTitle: "目前没有在保存",
+      storeWarnBody: "此浏览器正在阻止存储。请立即保存备份文件，关闭窗口后输入的内容会丢失。",
+      storeWarnBtn: "立即备份",
+      menuRecover: "🩺 存储检查 / 恢复",
+      mirrorRestored: "已保存的数据丢失，已从副本恢复（照片可能缺失）",
       xlsxMaking: "正在生成 Excel 文件…", xlsxSaved: "Excel 文件已保存", xlsxFailed: "导出 Excel 失败",
       nothingToExport: "暂无可导出的内容",
       needCardFirst: "请先添加名片照片", qrSearching: "正在名片上查找二维码…",
@@ -4152,6 +4261,7 @@
       '<button class="sheet-item" data-act="excel"><span class="grow">' + esc(t("menuExcel")) + '</span></button>' +
       '<button class="sheet-item" data-act="backup"><span class="grow">' + esc(t("menuBackup")) + '</span></button>' +
       '<button class="sheet-item" data-act="restore"><span class="grow">' + esc(t("menuRestore")) + '</span></button>' +
+      '<button class="sheet-item" data-act="recover"><span class="grow">' + esc(t("menuRecover")) + '</span></button>' +
       '<button class="sheet-item" data-act="lang"><span class="grow">' + esc(t("menuLang")) + '</span></button>' +
       (canInstall() ? '<button class="sheet-item" data-act="install"><span class="grow">' + esc(t("menuInstall")) + '</span></button>' : "") +
       '<button class="sheet-item" data-act="transServer"><span class="grow">' + esc(t("menuTransServer")) + '</span></button>' +
@@ -4190,6 +4300,9 @@
         save();
         toast(t("transServerSaved"));
       });
+    } else if (act === "recover") {
+      saveNow();
+      location.href = "recover.html";
     } else if (act === "install") {
       doInstall();
     } else if (act === "guide") {
@@ -4758,6 +4871,12 @@
 
   /* ────────── 시작 ────────── */
   dbGet("kv", "state").then(function (saved) {
+    /* 저장된 게 사라졌는데 글자 사본이 남아 있으면 그거라도 살린다 */
+    var fromMirror = false;
+    if (!saved) {
+      var mir = mirrorLoad();
+      if (mir && mir.markets && mir.markets.length) { saved = mir; fromMirror = true; }
+    }
     var restored = migrate(saved);
     state = restored ? normalize(restored) : { markets: [newMarket()], currentMarket: 0, current: 0 };
     lang = (state.lang && I18N[state.lang]) ? state.lang : detectLang();
@@ -4767,6 +4886,7 @@
     applyLang();
     placeFab();
     if (saved) save();        /* 옛 형식을 읽었으면 새 형식으로 다시 저장해둔다 */
+    if (fromMirror) setTimeout(function () { toast(t("mirrorRestored")); }, 700);
     return render();
   }).then(function () {
     var preload = function () { ensureJsQR(); };
