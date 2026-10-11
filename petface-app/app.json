@@ -1,21 +1,37 @@
 {
   "expo": {
-    "name": "catmind-app",
-    "slug": "catmind-app",
+    "name": "PetFace",
+    "slug": "petface",
+    "scheme": "petface",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "backgroundColor": "#FFF8F2",
+    "locales": {
+      "ko": "./native-locales/ko.json",
+      "en": "./native-locales/en.json",
+      "ja": "./native-locales/ja.json"
+    },
     "ios": {
-      "supportsTablet": true
+      "bundleIdentifier": "com.CHANGE_ME.petface",
+      "buildNumber": "1",
+      "supportsTablet": false,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleAllowMixedLocalizations": true
+      }
     },
     "android": {
+      "package": "com.CHANGE_ME.petface",
+      "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#FFE9DF",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
+      "permissions": ["android.permission.CAMERA"],
       "predictiveBackGestureEnabled": false
     },
     "web": {
@@ -29,8 +45,33 @@
       "expo-sharing",
       "expo-image",
       "expo-font",
-      "expo-splash-screen",
-      "expo-build-properties"
-    ]
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160,
+          "backgroundColor": "#FFF8F2"
+        }
+      ],
+      "expo-build-properties",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "PetFace uses the camera to photograph your pet's face and analyse their mood and health signs.",
+          "photosPermission": "PetFace accesses your photo library so you can choose a pet photo to analyse.",
+          "microphonePermission": false
+        }
+      ],
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-3940256099942544~3347511713",
+          "iosAppId": "ca-app-pub-3940256099942544~1458002511"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": false
+    }
   }
 }

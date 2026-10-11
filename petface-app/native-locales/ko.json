@@ -1,0 +1,5 @@
+{
+  "CFBundleDisplayName": "펫페이스",
+  "NSCameraUsageDescription": "반려동물 얼굴 사진을 찍어 기분과 건강 신호를 분석하기 위해 카메라를 사용합니다.",
+  "NSPhotoLibraryUsageDescription": "앨범에서 반려동물 사진을 선택해 분석하기 위해 사진 보관함에 접근합니다."
+}

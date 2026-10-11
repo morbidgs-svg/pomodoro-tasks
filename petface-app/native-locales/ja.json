@@ -1,0 +1,5 @@
+{
+  "CFBundleDisplayName": "ペットフェイス",
+  "NSCameraUsageDescription": "ペットの顔を撮影し、気分や健康のサインを分析するためにカメラを使用します。",
+  "NSPhotoLibraryUsageDescription": "分析するペットの写真を選ぶために写真ライブラリにアクセスします。"
+}
