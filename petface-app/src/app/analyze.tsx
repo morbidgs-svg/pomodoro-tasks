@@ -11,7 +11,7 @@ import { ApiError, api, type ApiErrorCode } from "@/lib/api";
 import { currentLanguage } from "@/lib/i18n";
 import { preparePhoto } from "@/lib/image";
 import { session } from "@/lib/session";
-import { persistPhoto } from "@/lib/storage";
+import { persistPhoto } from "@/lib/photos";
 import { useApp } from "@/lib/store";
 import { colors, font, radius, space } from "@/lib/theme";
 import type { HistoryItem } from "@/lib/types";

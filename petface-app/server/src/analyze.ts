@@ -5,23 +5,11 @@ import {
   type AnalysisResponse,
   type ModelAnalysis,
 } from "./schema";
+import { DEFAULT_FALLBACK_MODELS, type ClaudeEnv } from "./models";
 import { SYSTEM_PROMPT, userInstruction } from "./prompt";
 
-export interface ClaudeEnv {
-  ANTHROPIC_API_KEY: string;
-  CLAUDE_MODEL?: string;
-  CLAUDE_EFFORT?: "low" | "medium" | "high";
-}
-
-export const DEFAULT_MODEL = "claude-opus-5-5";
-
-// Models that accept the server-side `fallbacks: "default"` refusal fallback.
-const DEFAULT_FALLBACK_MODELS = new Set([
-  "claude-opus-5-5",
-  "claude-opus-5",
-  "claude-fable-5-1",
-  "claude-sonnet-5-5",
-]);
+export type { ClaudeEnv } from "./models";
+export { modelFor } from "./models";
 
 export type ImageMediaType = "image/jpeg" | "image/png" | "image/webp";
 
@@ -41,10 +29,11 @@ export async function analyzePetPhoto(
     mediaType: ImageMediaType;
     locale: string;
     pet?: { name?: string; species?: "cat" | "dog" };
+    model: string;
   },
 ): Promise<AnalysisResponse> {
   const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY, maxRetries: 2, timeout: 60_000 });
-  const model = env.CLAUDE_MODEL || DEFAULT_MODEL;
+  const model = input.model;
   const useFallback = DEFAULT_FALLBACK_MODELS.has(model);
 
   let response: Anthropic.Beta.BetaMessage;

@@ -1,4 +1,5 @@
 import { config } from "./config";
+import { demoAnalysis, demoEnabled } from "./demo";
 import { getDeviceId } from "./device";
 import type { AnalysisResponse, PetSpecies, QuotaStatus } from "./types";
 
@@ -58,8 +59,12 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return body as T;
 }
 
+const DEMO_STATUS: QuotaStatus = { premium: false, used: 0, limit: 3, remaining: 3, bonusAvailable: 2 };
+const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 export const api = {
-  status: () => request<QuotaStatus>("/v1/status"),
+  status: () =>
+    demoEnabled(config.apiUrl) ? Promise.resolve(DEMO_STATUS) : request<QuotaStatus>("/v1/status"),
   refreshPremium: () => request<QuotaStatus>("/v1/refresh-premium", { method: "POST" }),
   claimAdBonus: () => request<QuotaStatus>("/v1/ad-bonus", { method: "POST" }),
   analyze: (input: {
@@ -68,7 +73,9 @@ export const api = {
     petName?: string;
     species?: PetSpecies;
   }) =>
-    request<{ result: AnalysisResponse; status: QuotaStatus }>("/v1/analyze", {
+    demoEnabled(config.apiUrl)
+      ? wait(2500).then(() => ({ result: demoAnalysis(input.locale, input.species), status: DEMO_STATUS }))
+      : request<{ result: AnalysisResponse; status: QuotaStatus }>("/v1/analyze", {
       method: "POST",
       body: JSON.stringify({ ...input, mediaType: "image/jpeg" }),
     }),

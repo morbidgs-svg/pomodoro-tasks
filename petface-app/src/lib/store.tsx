@@ -4,7 +4,8 @@ import { api } from "./api";
 import { FREE_LIMITS } from "./config";
 import i18n, { deviceLanguage, type AppLanguage } from "./i18n";
 import { hasPremium, initPurchases } from "./purchases";
-import { deletePhoto, storage, type Settings } from "./storage";
+import { deletePhoto } from "./photos";
+import { storage, type Settings } from "./storage";
 import type { HistoryItem, Pet, PetSpecies, QuotaStatus } from "./types";
 
 const PREMIUM_HISTORY_CAP = 1000;

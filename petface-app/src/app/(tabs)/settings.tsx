@@ -1,7 +1,7 @@
 import Constants from "expo-constants";
 import * as WebBrowser from "expo-web-browser";
 import { useRouter } from "expo-router";
-import type { ReactNode } from "react";
+import { Children, cloneElement, isValidElement, type ReactElement, type ReactNode } from "react";
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { SPECIES_EMOJI } from "@/components/PetSwitcher";
@@ -93,7 +93,13 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <View style={{ gap: 6 }}>
       <Text style={[font.small, { fontWeight: "700", marginLeft: 4 }]}>{title}</Text>
-      <Card style={{ paddingVertical: 4, gap: 0 }}>{children}</Card>
+      <Card style={{ paddingVertical: 4, gap: 0 }}>
+        {Children.toArray(children)
+          .filter(isValidElement)
+          .map((child, i, all) =>
+            i === all.length - 1 ? cloneElement(child as ReactElement<{ last?: boolean }>, { last: true }) : child,
+          )}
+      </Card>
     </View>
   );
 }
@@ -105,8 +111,10 @@ function Row({
   accent,
   danger,
   muted,
+  last,
 }: {
   label: string;
+  last?: boolean;
   onPress?: () => void;
   checked?: boolean;
   accent?: boolean;
@@ -115,7 +123,7 @@ function Row({
 }) {
   const color = danger ? colors.concern : accent ? colors.premium : muted ? colors.sub : colors.text;
   return (
-    <Pressable onPress={onPress} disabled={!onPress} style={styles.row}>
+    <Pressable onPress={onPress} disabled={!onPress} style={[styles.row, last && { borderBottomWidth: 0 }]}>
       <Text style={[font.body, { color, flex: 1, fontWeight: accent ? "800" : "500" }]}>{label}</Text>
       {checked ? <Text style={{ color: colors.primary, fontSize: 18 }}>✓</Text> : null}
       {onPress && checked === undefined ? <Text style={{ color: colors.sub, fontSize: 20 }}>›</Text> : null}

@@ -9,7 +9,10 @@ binding = "QUOTA"
 id = "REPLACE_WITH_KV_NAMESPACE_ID"
 
 [vars]
-CLAUDE_MODEL = "claude-opus-5-5"
+# Which Claude model analyses photos, per plan. See docs/비용_수익_분석.md for the
+# cost per analysis of each option before changing these.
+CLAUDE_MODEL_FREE = "claude-opus-5-5"
+CLAUDE_MODEL_PREMIUM = "claude-opus-5-5"
 CLAUDE_EFFORT = "low"
 FREE_DAILY_LIMIT = "3"
 PREMIUM_DAILY_LIMIT = "30"

@@ -1,4 +1,4 @@
-import { analyzePetPhoto, AnalysisError, type ClaudeEnv, type ImageMediaType } from "./analyze";
+import { analyzePetPhoto, AnalysisError, modelFor, type ClaudeEnv, type ImageMediaType } from "./analyze";
 import { checkQuota, getStatus, grantAdBonus, recordUse, type QuotaEnv } from "./quota";
 import { clearPremiumCache, isPremium, type RevenueCatEnv } from "./revenuecat";
 
@@ -101,7 +101,13 @@ async function handleAnalyze(
   if (!quota.ok) return error(quota.reason, 429, { status: quota.status });
 
   try {
-    const result = await analyzePetPhoto(env, { imageBase64: image, mediaType, locale, pet });
+    const result = await analyzePetPhoto(env, {
+      imageBase64: image,
+      mediaType,
+      locale,
+      pet,
+      model: modelFor(env, premium),
+    });
     await recordUse(env, deviceId, ip, result.usable);
     const status = await getStatus(env, deviceId, premium);
     return json({ result, status });

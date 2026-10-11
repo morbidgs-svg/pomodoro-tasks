@@ -91,3 +91,14 @@ test("quota: global cap stops everyone", async () => {
   const r = await checkQuota(env, "bbbbbbbb-2222-3333-4444-555555555555", "2.2.2.2", true);
   assert.equal(!r.ok && r.reason, "service_busy");
 });
+
+import { modelFor, DEFAULT_MODEL } from "../src/models.ts";
+
+test("model per plan: tier override, then shared, then default", () => {
+  const base = { ANTHROPIC_API_KEY: "x" };
+  assert.equal(modelFor(base, false), DEFAULT_MODEL);
+  assert.equal(modelFor({ ...base, CLAUDE_MODEL: "m" }, true), "m");
+  const tiered = { ...base, CLAUDE_MODEL: "m", CLAUDE_MODEL_FREE: "f", CLAUDE_MODEL_PREMIUM: "p" };
+  assert.equal(modelFor(tiered, false), "f");
+  assert.equal(modelFor(tiered, true), "p");
+});
