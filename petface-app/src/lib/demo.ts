@@ -1,4 +1,4 @@
-import type { AnalysisResponse, PetSpecies } from "./types";
+import type { AnalysisResponse, PetSpecies, VoiceAnalysisResponse } from "./types";
 
 // Canned results used only in development builds when no server URL is set,
 // so the whole flow can be tried without an API key. Never used in release.
@@ -89,6 +89,7 @@ export function demoAnalysis(locale: string, species: PetSpecies = "cat"): Analy
   const s = text[lang][species];
   const unit = (score: 0 | 1 | 2) => ({ visible: species === "cat", score, note: "" });
   return {
+    kind: "face",
     species,
     face_visible: true,
     image_quality: "good",
@@ -116,6 +117,101 @@ export function demoAnalysis(locale: string, species: PetSpecies = "cat"): Analy
     usable: true,
     catPain:
       species === "cat" ? { total: 0, max: 8, scoredUnits: 4, ratio: 0, level: "low" } : null,
+    model: "demo",
+    createdAt: new Date().toISOString(),
+  };
+}
+
+const voiceText = {
+  ko: {
+    cat: {
+      type: "meow" as const,
+      headline: "밥 시간이라고 알려주는 중!",
+      voice: "집사, 그릇이 비었다옹~",
+      explanation:
+        "끝이 올라가는 맑은 야옹 소리가 짧게 여러 번 반복됐어요. 밥 시간 전이라는 상황과 함께 보면 무언가를 요청하는 소리로 보여요.",
+      cues: [
+        ["pitch", "끝이 올라가는 높은 소리예요", "요청하거나 관심을 끌 때 자주 내는 소리예요"],
+        ["repetition", "짧은 소리를 세 번 반복했어요", "원하는 것이 있다는 신호예요"],
+        ["context", "밥 먹기 전 상황이에요", "배고픔을 알리는 경우가 많아요"],
+      ],
+      health: [["voice_quality", "목소리가 맑고 쉰 소리는 없어요", "ok"]],
+      summary: "소리에서 특별히 걱정되는 신호는 들리지 않아요.",
+      tips: ["정해진 시간에 밥을 주면 보채는 소리가 줄어들 수 있어요", "자동 급식기로 식사 시간을 일정하게 맞춰 보세요"],
+    },
+    dog: {
+      type: "whine" as const,
+      headline: "같이 놀자고 조르는 중",
+      voice: "나 좀 봐줘~ 심심하단 말이야!",
+      explanation:
+        "높고 길게 이어지는 낑낑 소리가 반복됐어요. 혼자 있거나 보호자를 찾는 상황이라면 관심이나 함께하기를 원하는 신호일 수 있어요.",
+      cues: [
+        ["pitch", "높고 맑은 소리가 길게 이어져요", "무언가를 원하거나 조금 불안할 때 내는 소리예요"],
+        ["repetition", "같은 소리를 여러 번 반복했어요", "원하는 게 채워지지 않았다는 뜻이에요"],
+        ["context", "보호자를 찾는 상황이에요", "관심이나 함께 있기를 원해요"],
+      ],
+      health: [["pain_sounds", "날카로운 비명 같은 소리는 없어요", "ok"]],
+      summary: "통증을 의심할 만한 소리는 들리지 않아요.",
+      tips: ["짧게라도 눈 맞추고 놀아 주세요", "혼자 있는 시간에는 노즈워크 장난감을 주면 좋아요"],
+    },
+  },
+  en: {
+    cat: {
+      type: "meow" as const,
+      headline: "Announcing dinner time!",
+      voice: "Human, the bowl is empty~",
+      explanation:
+        "Short, clear meows with a rising ending, repeated a few times. Right before a meal, that usually means a request.",
+      cues: [
+        ["pitch", "High, rising ending", "Common when asking for something"],
+        ["repetition", "Three short calls in a row", "There's something they want"],
+        ["context", "Right before a meal", "Often a hunger call"],
+      ],
+      health: [["voice_quality", "Voice sounds clear, not hoarse", "ok"]],
+      summary: "Nothing worrying stands out in this sound.",
+      tips: ["Regular meal times can reduce demand meowing", "A timed feeder keeps meals consistent"],
+    },
+    dog: {
+      type: "whine" as const,
+      headline: "Begging for playtime",
+      voice: "Look at me~ I'm bored!",
+      explanation:
+        "High, drawn-out whines repeated several times. While looking for you, that usually means wanting attention or company.",
+      cues: [
+        ["pitch", "High, clear, drawn-out sound", "Wanting something, or a bit anxious"],
+        ["repetition", "Repeated several times", "The need hasn't been met yet"],
+        ["context", "Looking for the owner", "Wants attention or company"],
+      ],
+      health: [["pain_sounds", "No sharp yelps", "ok"]],
+      summary: "No sounds suggesting pain.",
+      tips: ["Even a short play session helps", "A snuffle toy helps during alone time"],
+    },
+  },
+} as const;
+
+export function demoVoiceAnalysis(locale: string, species: PetSpecies = "cat"): VoiceAnalysisResponse {
+  const s = voiceText[locale === "ko" ? "ko" : "en"][species];
+  return {
+    kind: "voice",
+    source: species,
+    sound_type: s.type,
+    mood: {
+      primary: species === "cat" ? "curious" : "anxious",
+      confidence: "low",
+      headline: s.headline,
+      pet_voice: s.voice,
+      explanation: s.explanation,
+    },
+    arousal: "medium",
+    condition: "normal",
+    likely_needs: species === "cat" ? ["food", "attention"] : ["attention", "play"],
+    cues: s.cues.map(([cue, observation, meaning]) => ({ cue, observation, meaning })),
+    health_signs: s.health.map(([area, finding, level]) => ({ area, finding, level })),
+    health_summary: s.summary,
+    care_tips: [...s.tips],
+    recommended_categories: species === "cat" ? ["treat", "toy"] : ["toy", "calming"],
+    vet_advice: "none",
+    usable: true,
     model: "demo",
     createdAt: new Date().toISOString(),
   };

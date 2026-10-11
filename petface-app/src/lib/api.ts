@@ -1,7 +1,14 @@
 import { config } from "./config";
-import { demoAnalysis, demoEnabled } from "./demo";
+import type { Spectrogram, VoiceFeatures } from "./acoustics";
+import { demoAnalysis, demoEnabled, demoVoiceAnalysis } from "./demo";
 import { getDeviceId } from "./device";
-import type { AnalysisResponse, PetSpecies, QuotaStatus } from "./types";
+import type {
+  AnalysisResponse,
+  PetSpecies,
+  QuotaStatus,
+  SoundContext,
+  VoiceAnalysisResponse,
+} from "./types";
 
 export type ApiErrorCode =
   | "not_configured"
@@ -12,6 +19,7 @@ export type ApiErrorCode =
   | "upstream_busy"
   | "refused"
   | "bad_image"
+  | "bad_audio"
   | "server_error";
 
 export class ApiError extends Error {
@@ -50,6 +58,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
       "upstream_busy",
       "refused",
       "bad_image",
+      "bad_audio",
     ];
     throw new ApiError(
       known.includes(code as ApiErrorCode) ? (code as ApiErrorCode) : "server_error",
@@ -79,4 +88,21 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ ...input, mediaType: "image/jpeg" }),
     }),
+  analyzeVoice: (input: {
+    features: VoiceFeatures;
+    spectrogram: Spectrogram;
+    context: SoundContext;
+    locale: string;
+    petName?: string;
+    species?: PetSpecies;
+  }) =>
+    demoEnabled(config.apiUrl)
+      ? wait(2000).then(() => ({
+          result: demoVoiceAnalysis(input.locale, input.species),
+          status: DEMO_STATUS,
+        }))
+      : request<{ result: VoiceAnalysisResponse; status: QuotaStatus }>("/v1/analyze-voice", {
+          method: "POST",
+          body: JSON.stringify(input),
+        }),
 };

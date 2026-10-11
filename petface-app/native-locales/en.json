@@ -1,5 +1,6 @@
 {
   "CFBundleDisplayName": "PetFace",
   "NSCameraUsageDescription": "PetFace uses the camera to photograph your pet's face and analyse their mood and health signs.",
-  "NSPhotoLibraryUsageDescription": "PetFace accesses your photo library so you can choose a pet photo to analyse."
+  "NSPhotoLibraryUsageDescription": "PetFace accesses your photo library so you can choose a pet photo to analyse.",
+  "NSMicrophoneUsageDescription": "PetFace uses the microphone to listen to your pet's sounds and estimate their mood and condition. Recordings are not stored."
 }

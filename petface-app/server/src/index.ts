@@ -1,4 +1,13 @@
-import { analyzePetPhoto, AnalysisError, modelFor, type ClaudeEnv, type ImageMediaType } from "./analyze";
+import {
+  analyzePetPhoto,
+  analyzePetSound,
+  AnalysisError,
+  modelFor,
+  type ClaudeEnv,
+  type ImageMediaType,
+} from "./analyze";
+import { decodeSpectrogram, renderSpectrogramPng, toBase64 } from "./spectrogram";
+import { parseContext, sanitizeFeatures } from "./voiceInput";
 import { checkQuota, getStatus, grantAdBonus, recordUse, type QuotaEnv } from "./quota";
 import { clearPremiumCache, isPremium, type RevenueCatEnv } from "./revenuecat";
 
@@ -58,6 +67,10 @@ export default {
       if (request.method === "POST" && url.pathname === "/v1/analyze") {
         return await handleAnalyze(request, env, deviceId, ip);
       }
+
+      if (request.method === "POST" && url.pathname === "/v1/analyze-voice") {
+        return await handleAnalyzeVoice(request, env, deviceId, ip);
+      }
     } catch (e) {
       console.error("Unhandled error", e);
       return error("server_error", 500);
@@ -106,6 +119,54 @@ async function handleAnalyze(
       mediaType,
       locale,
       pet,
+      model: modelFor(env, premium),
+    });
+    await recordUse(env, deviceId, ip, result.usable);
+    const status = await getStatus(env, deviceId, premium);
+    return json({ result, status });
+  } catch (e) {
+    if (e instanceof AnalysisError) {
+      const http = e.code === "upstream_busy" ? 503 : e.code === "refused" ? 422 : 502;
+      return error(e.code, http);
+    }
+    throw e;
+  }
+}
+
+async function handleAnalyzeVoice(
+  request: Request,
+  env: Env,
+  deviceId: string,
+  ip: string,
+): Promise<Response> {
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json();
+  } catch {
+    return error("bad_request", 400);
+  }
+  const features = sanitizeFeatures(body.features);
+  const spec = body.spectrogram as { bands: number; frames: number; data: string } | undefined;
+  const cells = spec && typeof spec.data === "string" ? decodeSpectrogram(spec) : null;
+  if (!features || !cells || !spec) return error("bad_audio", 400);
+
+  const locale = typeof body.locale === "string" && LOCALES.has(body.locale) ? body.locale : "en";
+  const species = body.species === "cat" || body.species === "dog" ? body.species : undefined;
+  const petName = typeof body.petName === "string" ? body.petName : undefined;
+
+  const premium = await isPremium(env, deviceId);
+  const quota = await checkQuota(env, deviceId, ip, premium);
+  if (!quota.ok) return error(quota.reason, 429, { status: quota.status });
+
+  const png = renderSpectrogramPng(cells, spec.bands, spec.frames, features.durationSec as number);
+  try {
+    const result = await analyzePetSound(env, {
+      spectrogramPngBase64: toBase64(png),
+      features,
+      locale,
+      petName,
+      species,
+      context: parseContext(body.context),
       model: modelFor(env, premium),
     });
     await recordUse(env, deviceId, ip, result.usable);

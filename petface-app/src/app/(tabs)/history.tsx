@@ -1,15 +1,14 @@
-import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { Alert, FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { BannerAdSlot } from "@/components/BannerAdSlot";
 import { SPECIES_EMOJI } from "@/components/PetSwitcher";
+import { ResultThumb } from "@/components/ResultThumb";
 import { TrendChart } from "@/components/TrendChart";
 import { Button, Card, Chip } from "@/components/ui";
 import { FREE_LIMITS } from "@/lib/config";
 import { LEVEL_COLORS, MOOD_EMOJI, VET_LEVEL } from "@/lib/mood";
-import { resolvePhoto } from "@/lib/photos";
 import { useApp } from "@/lib/store";
 import { colors, font, radius, space } from "@/lib/theme";
 
@@ -78,7 +77,7 @@ export default function History() {
               }
               style={styles.row}
             >
-              <Image source={{ uri: resolvePhoto(item.photoUri) }} style={styles.thumb} contentFit="cover" />
+              <ResultThumb item={item} size={72} />
               <View style={{ flex: 1, gap: 3 }}>
                 <Text style={font.small}>{new Date(item.createdAt).toLocaleString()}</Text>
                 <Text style={[font.body, { fontWeight: "700" }]} numberOfLines={1}>
@@ -125,5 +124,4 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     alignItems: "center",
   },
-  thumb: { width: 72, height: 72, borderRadius: radius.sm },
 });

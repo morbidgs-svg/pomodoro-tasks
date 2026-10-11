@@ -12,24 +12,136 @@ import { LEVEL_COLORS, MOOD_EMOJI, VET_LEVEL, moodColor } from "@/lib/mood";
 import { session } from "@/lib/session";
 import { useApp } from "@/lib/store";
 import { colors, font, space } from "@/lib/theme";
-import { CAT_PAIN_UNITS, type HistoryItem } from "@/lib/types";
+import {
+  CAT_PAIN_UNITS,
+  isVoice,
+  type AnalysisResponse,
+  type AnyResult,
+  type HistoryItem,
+  type PetSpecies,
+  type VoiceAnalysisResponse,
+} from "@/lib/types";
 
 export default function Result() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { history, pets } = useApp();
   const item = history.find((h) => h.id === id) ?? session.get(id);
   if (!item) return null;
-  return item.result.usable ? (
-    <UsableResult item={item} petName={pets.find((p) => p.id === item.petId)?.name} />
-  ) : (
-    <UnusableResult item={item} />
+  const petName = pets.find((p) => p.id === item.petId)?.name;
+  const r = item.result;
+  if (isVoice(r)) {
+    return r.usable ? <VoiceResult item={item} result={r} petName={petName} /> : <UnusableVoice result={r} />;
+  }
+  return r.usable ? <FaceResult item={item} result={r} petName={petName} /> : <UnusableFace result={r} />;
+}
+
+// ── shared pieces ───────────────────────────────────────────────────────────
+
+function useShare(ref: React.RefObject<View | null>) {
+  const { t } = useTranslation();
+  const [sharing, setSharing] = useState(false);
+  const share = async () => {
+    setSharing(true);
+    try {
+      const uri = await captureRef(ref, { format: "png", quality: 1 });
+      await Sharing.shareAsync(uri, { mimeType: "image/png" });
+    } catch {
+      Alert.alert(t("result.shareFailed"));
+    } finally {
+      setSharing(false);
+    }
+  };
+  return { share, sharing };
+}
+
+function MoodCard({ result, extra }: { result: AnyResult; extra?: React.ReactNode }) {
+  const { t } = useTranslation();
+  const { mood } = result;
+  return (
+    <Card>
+      <View style={styles.row}>
+        <Text style={{ fontSize: 34 }}>{MOOD_EMOJI[mood.primary]}</Text>
+        <View style={{ flex: 1, gap: 4 }}>
+          <Text style={[font.h2, { color: moodColor(mood.primary) }]}>{t(`moods.${mood.primary}`)}</Text>
+          <View style={styles.chips}>
+            <Chip label={t(`result.confidence.${mood.confidence}`)} fg={colors.sub} bg={colors.line} />
+            {extra}
+          </View>
+        </View>
+      </View>
+      <Text style={font.body}>{mood.explanation}</Text>
+    </Card>
   );
 }
 
-function UnusableResult({ item }: { item: HistoryItem }) {
+function HealthCard({
+  result,
+  areaLabel,
+}: {
+  result: AnyResult;
+  areaLabel: (area: string) => string;
+}) {
+  const { t } = useTranslation();
+  const vetLevel = LEVEL_COLORS[VET_LEVEL[result.vet_advice]];
+  return (
+    <Card>
+      <SectionTitle>🩺 {t("result.health")}</SectionTitle>
+      <View style={[styles.vetBanner, { backgroundColor: vetLevel.bg }]}>
+        <Text style={[font.body, { color: vetLevel.fg, fontWeight: "800" }]}>{t(`result.vet.${result.vet_advice}`)}</Text>
+      </View>
+      {result.health_summary ? <Text style={font.body}>{result.health_summary}</Text> : null}
+      {result.health_signs.map((s, i) => {
+        const c = LEVEL_COLORS[s.level];
+        return (
+          <View key={i} style={styles.signRow}>
+            <Chip label={t(`result.healthLevels.${s.level}`)} fg={c.fg} bg={c.bg} />
+            <View style={{ flex: 1 }}>
+              <Text style={[font.body, { fontWeight: "700" }]}>{areaLabel(s.area)}</Text>
+              <Text style={font.small}>{s.finding}</Text>
+            </View>
+          </View>
+        );
+      })}
+    </Card>
+  );
+}
+
+function CareAndProducts({ result, species }: { result: AnyResult; species: PetSpecies | null }) {
+  const { t } = useTranslation();
+  const products = recommendProducts(result.recommended_categories, species);
+  return (
+    <>
+      {result.care_tips.length > 0 && (
+        <Card>
+          <SectionTitle>💛 {t("result.care")}</SectionTitle>
+          {result.care_tips.map((tip, i) => (
+            <Text key={i} style={font.body}>
+              {i + 1}. {tip}
+            </Text>
+          ))}
+        </Card>
+      )}
+      {products.length > 0 && (
+        <View style={{ gap: space.sm }}>
+          <SectionTitle>🎁 {t("result.products")}</SectionTitle>
+          {products.map((p) => (
+            <ProductCard key={p.id} product={p} />
+          ))}
+          {products.some((p) => p.source === "affiliate") && (
+            <Text style={font.small}>{t("shop.affiliateDisclosure")}</Text>
+          )}
+        </View>
+      )}
+    </>
+  );
+}
+
+// ── face results ────────────────────────────────────────────────────────────
+
+function UnusableFace({ result }: { result: AnalysisResponse }) {
   const { t } = useTranslation();
   const router = useRouter();
-  const { species, mood } = item.result;
+  const { species, mood } = result;
   const speciesMsg =
     species === "other_animal" || species === "no_animal" ? t(`result.species.${species}`) : null;
   return (
@@ -53,29 +165,14 @@ function UnusableResult({ item }: { item: HistoryItem }) {
   );
 }
 
-function UsableResult({ item, petName }: { item: HistoryItem; petName?: string }) {
+function FaceResult({ item, result: r, petName }: { item: HistoryItem; result: AnalysisResponse; petName?: string }) {
   const { t } = useTranslation();
   const router = useRouter();
   const { width } = useWindowDimensions();
   const shareRef = useRef<View>(null);
-  const [sharing, setSharing] = useState(false);
-  const r = item.result;
+  const { share, sharing } = useShare(shareRef);
   const species = r.species === "cat" || r.species === "dog" ? r.species : null;
-  const products = recommendProducts(r.recommended_categories, species);
-  const vetLevel = LEVEL_COLORS[VET_LEVEL[r.vet_advice]];
   const cardSize = Math.min(width - space.md * 2, 420);
-
-  const share = async () => {
-    setSharing(true);
-    try {
-      const uri = await captureRef(shareRef, { format: "png", quality: 1 });
-      await Sharing.shareAsync(uri, { mimeType: "image/png" });
-    } catch {
-      Alert.alert(t("result.shareFailed"));
-    } finally {
-      setSharing(false);
-    }
-  };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -83,16 +180,7 @@ function UsableResult({ item, petName }: { item: HistoryItem; petName?: string }
         <ShareCard ref={shareRef} item={item} petName={petName} size={cardSize} />
       </View>
 
-      <Card>
-        <View style={styles.row}>
-          <Text style={{ fontSize: 34 }}>{MOOD_EMOJI[r.mood.primary]}</Text>
-          <View style={{ flex: 1, gap: 4 }}>
-            <Text style={[font.h2, { color: moodColor(r.mood.primary) }]}>{t(`moods.${r.mood.primary}`)}</Text>
-            <Chip label={t(`result.confidence.${r.mood.confidence}`)} fg={colors.sub} bg={colors.line} />
-          </View>
-        </View>
-        <Text style={font.body}>{r.mood.explanation}</Text>
-      </Card>
+      <MoodCard result={r} />
 
       <Card>
         <SectionTitle>🔍 {t("result.cues")}</SectionTitle>
@@ -107,25 +195,7 @@ function UsableResult({ item, petName }: { item: HistoryItem; petName?: string }
         ))}
       </Card>
 
-      <Card>
-        <SectionTitle>🩺 {t("result.health")}</SectionTitle>
-        <View style={[styles.vetBanner, { backgroundColor: vetLevel.bg }]}>
-          <Text style={[font.body, { color: vetLevel.fg, fontWeight: "800" }]}>{t(`result.vet.${r.vet_advice}`)}</Text>
-        </View>
-        {r.health_summary ? <Text style={font.body}>{r.health_summary}</Text> : null}
-        {r.health_signs.map((s, i) => {
-          const c = LEVEL_COLORS[s.level];
-          return (
-            <View key={i} style={styles.signRow}>
-              <Chip label={t(`result.healthLevels.${s.level}`)} fg={c.fg} bg={c.bg} />
-              <View style={{ flex: 1 }}>
-                <Text style={[font.body, { fontWeight: "700" }]}>{t(`result.healthAreas.${s.area}`)}</Text>
-                <Text style={font.small}>{s.finding}</Text>
-              </View>
-            </View>
-          );
-        })}
-      </Card>
+      <HealthCard result={r} areaLabel={(a) => t(`result.healthAreas.${a}`)} />
 
       {r.catPain && (
         <Card>
@@ -167,33 +237,126 @@ function UsableResult({ item, petName }: { item: HistoryItem; petName?: string }
         </Card>
       )}
 
-      {r.care_tips.length > 0 && (
-        <Card>
-          <SectionTitle>💛 {t("result.care")}</SectionTitle>
-          {r.care_tips.map((tip, i) => (
-            <Text key={i} style={font.body}>
-              {i + 1}. {tip}
-            </Text>
-          ))}
-        </Card>
-      )}
-
-      {products.length > 0 && (
-        <View style={{ gap: space.sm }}>
-          <SectionTitle>🎁 {t("result.products")}</SectionTitle>
-          {products.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
-          {products.some((p) => p.source === "affiliate") && (
-            <Text style={font.small}>{t("shop.affiliateDisclosure")}</Text>
-          )}
-        </View>
-      )}
+      <CareAndProducts result={r} species={species} />
 
       <Button title={t("result.share")} icon="📤" loading={sharing} onPress={share} />
       <Button variant="secondary" title={t("result.retake")} icon="📸" onPress={() => router.dismissTo("/")} />
       <Text style={[font.small, { textAlign: "center" }]}>{t("result.disclaimer")}</Text>
     </ScrollView>
+  );
+}
+
+// ── sound results ───────────────────────────────────────────────────────────
+
+function UnusableVoice({ result }: { result: VoiceAnalysisResponse }) {
+  const { t } = useTranslation();
+  const router = useRouter();
+  return (
+    <ScrollView contentContainerStyle={styles.container}>
+      <Card>
+        <Text style={font.h2}>🤔 {t("voiceResult.notUsableTitle")}</Text>
+        {result.source === "not_pet" && <Text style={font.body}>{t("voiceResult.notPet")}</Text>}
+        <Text style={font.body}>{result.mood.explanation}</Text>
+        <Text style={font.small}>{t("result.notCounted")}</Text>
+      </Card>
+      <Card>
+        {(["tip1", "tip2", "tip3"] as const).map((k) => (
+          <Text key={k} style={font.body}>
+            • {t(`voice.${k}`)}
+          </Text>
+        ))}
+      </Card>
+      <Button title={t("voiceResult.retry")} icon="🎙️" onPress={() => router.replace("/record")} />
+    </ScrollView>
+  );
+}
+
+function VoiceResult({
+  item,
+  result: r,
+  petName,
+}: {
+  item: HistoryItem;
+  result: VoiceAnalysisResponse;
+  petName?: string;
+}) {
+  const { t } = useTranslation();
+  const router = useRouter();
+  const { width } = useWindowDimensions();
+  const shareRef = useRef<View>(null);
+  const { share, sharing } = useShare(shareRef);
+  const species = r.source === "cat" || r.source === "dog" ? r.source : null;
+  const cardSize = Math.min(width - space.md * 2, 420);
+  const conditionColor =
+    r.condition === "possible_discomfort"
+      ? LEVEL_COLORS.concern
+      : r.condition === "stressed"
+        ? LEVEL_COLORS.watch
+        : LEVEL_COLORS.ok;
+
+  return (
+    <ScrollView contentContainerStyle={styles.container}>
+      <View style={{ alignItems: "center" }}>
+        <ShareCard ref={shareRef} item={item} petName={petName} size={cardSize} />
+      </View>
+
+      <MoodCard
+        result={r}
+        extra={<Chip label={t("voiceResult.badge")} fg={colors.primaryDark} bg={colors.primarySoft} />}
+      />
+
+      <Card>
+        <View style={styles.statRow}>
+          <Stat label={t("voiceResult.soundType")} value={t(`voiceResult.soundTypes.${r.sound_type}`)} />
+          <Stat
+            label={t("voiceResult.condition")}
+            value={t(`voiceResult.conditions.${r.condition}`)}
+            color={conditionColor.fg}
+          />
+          <Stat label={t("voiceResult.arousal")} value={t(`voiceResult.arousalLevels.${r.arousal}`)} />
+        </View>
+        {r.likely_needs.length > 0 && (
+          <>
+            <Text style={[font.small, { fontWeight: "700", marginTop: 6 }]}>{t("voiceResult.needs")}</Text>
+            <View style={styles.chips}>
+              {r.likely_needs.map((n) => (
+                <Chip key={n} label={t(`voiceResult.needLabels.${n}`)} fg={colors.primaryDark} bg={colors.primarySoft} />
+              ))}
+            </View>
+          </>
+        )}
+      </Card>
+
+      <Card>
+        <SectionTitle>🔍 {t("voiceResult.cues")}</SectionTitle>
+        {r.cues.map((c, i) => (
+          <View key={i} style={styles.cue}>
+            <Text style={styles.cuePart}>{t(`voiceResult.cueLabels.${c.cue}`)}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={font.body}>{c.observation}</Text>
+              <Text style={font.small}>→ {c.meaning}</Text>
+            </View>
+          </View>
+        ))}
+      </Card>
+
+      <HealthCard result={r} areaLabel={(a) => t(`voiceResult.healthAreas.${a}`)} />
+
+      <CareAndProducts result={r} species={species} />
+
+      <Button title={t("result.share")} icon="📤" loading={sharing} onPress={share} />
+      <Button variant="secondary" title={t("voiceResult.retry")} icon="🎙️" onPress={() => router.replace("/record")} />
+      <Text style={[font.small, { textAlign: "center" }]}>{t("voiceResult.disclaimer")}</Text>
+    </ScrollView>
+  );
+}
+
+function Stat({ label, value, color }: { label: string; value: string; color?: string }) {
+  return (
+    <View style={styles.stat}>
+      <Text style={font.small}>{label}</Text>
+      <Text style={[font.body, { fontWeight: "800", color: color ?? colors.text, textAlign: "center" }]}>{value}</Text>
+    </View>
   );
 }
 
@@ -207,6 +370,7 @@ function painColor(level: string): string {
 const styles = StyleSheet.create({
   container: { padding: space.md, gap: space.md, paddingBottom: 48 },
   row: { flexDirection: "row", alignItems: "center", gap: 12 },
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
   cue: { flexDirection: "row", gap: 10, paddingVertical: 4 },
   cuePart: {
     width: 64,
@@ -220,4 +384,14 @@ const styles = StyleSheet.create({
   painRow: { flexDirection: "row", alignItems: "center", paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: colors.line },
   dots: { flexDirection: "row", gap: 6 },
   dot: { width: 14, height: 14, borderRadius: 7, backgroundColor: colors.line },
+  statRow: { flexDirection: "row", gap: 8 },
+  stat: {
+    flex: 1,
+    alignItems: "center",
+    gap: 4,
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    borderRadius: 12,
+    backgroundColor: colors.bg,
+  },
 });

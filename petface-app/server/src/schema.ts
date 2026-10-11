@@ -95,6 +95,8 @@ export interface PainSummary {
 }
 
 export interface AnalysisResponse extends ModelAnalysis {
+  /** Older saved results predate this field; treat a missing kind as "face". */
+  kind?: "face";
   /** Whether the photo shows a supported pet (cat or dog) with a readable face. */
   usable: boolean;
   /** Facial pain-sign score; cats only (dogs get observation-style health_signs). */

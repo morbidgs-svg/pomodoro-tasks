@@ -38,6 +38,7 @@ function RootStack() {
       <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false }} />
       <Stack.Screen name="pet-edit" options={{ presentation: "modal", title: t("pet.add") }} />
       <Stack.Screen name="analyze" options={{ headerShown: false, gestureEnabled: false }} />
+      <Stack.Screen name="record" options={{ title: t("voice.title") }} />
       <Stack.Screen name="result/[id]" options={{ title: t("result.title") }} />
       <Stack.Screen name="paywall" options={{ presentation: "modal", headerShown: false }} />
       <Stack.Screen name="legal" options={{ title: t("settings.disclaimer") }} />

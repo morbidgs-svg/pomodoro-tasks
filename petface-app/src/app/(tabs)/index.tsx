@@ -1,18 +1,17 @@
-import { Image } from "expo-image";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { BannerAdSlot } from "@/components/BannerAdSlot";
 import { PetSwitcher, SPECIES_EMOJI } from "@/components/PetSwitcher";
+import { ResultThumb } from "@/components/ResultThumb";
 import { Button, Card } from "@/components/ui";
 import { showRewardedAd } from "@/lib/ads";
 import { api } from "@/lib/api";
 import { pickPhoto, type PhotoSource } from "@/lib/image";
 import { MOOD_EMOJI } from "@/lib/mood";
-import { resolvePhoto } from "@/lib/photos";
 import { useApp } from "@/lib/store";
-import { colors, font, radius, space } from "@/lib/theme";
+import { colors, font, space } from "@/lib/theme";
 
 export default function Home() {
   const { t } = useTranslation();
@@ -73,8 +72,21 @@ export default function Home() {
           <Text style={[font.title, { textAlign: "center", fontSize: 23 }]}>
             {selectedPet ? t("home.question", { name: selectedPet.name }) : t("home.questionNoPet")}
           </Text>
+          <Text style={styles.modeTitle}>{t("home.faceTitle")}</Text>
           <Button title={t("home.takePhoto")} icon="📸" onPress={() => start("camera")} />
           <Button variant="secondary" title={t("home.fromLibrary")} icon="🖼️" onPress={() => start("library")} />
+          <View style={styles.divider} />
+          <Text style={styles.modeTitle}>{t("home.voiceTitle")}</Text>
+          <Button
+            variant="secondary"
+            title={t("home.listen")}
+            icon="🎙️"
+            onPress={() => {
+              if (outOfQuota) Alert.alert(t("home.limitReached"));
+              else router.push("/record");
+            }}
+          />
+          <Text style={[font.small, { textAlign: "center" }]}>{t("home.voiceHint")}</Text>
           {quota && (
             <Text style={[font.small, { textAlign: "center" }]}>
               {premium
@@ -97,7 +109,7 @@ export default function Home() {
         {last && (
           <Pressable onPress={() => router.push(`/result/${last.id}`)}>
             <Card style={styles.lastCard}>
-              <Image source={{ uri: resolvePhoto(last.photoUri) }} style={styles.lastPhoto} contentFit="cover" />
+              <ResultThumb item={last} size={60} />
               <View style={{ flex: 1, gap: 2 }}>
                 <Text style={font.small}>{new Date(last.createdAt).toLocaleDateString()}</Text>
                 <Text style={[font.body, { fontWeight: "700" }]} numberOfLines={1}>
@@ -131,5 +143,6 @@ const styles = StyleSheet.create({
   hero: { gap: 12, paddingVertical: space.lg },
   heroEmoji: { fontSize: 56, textAlign: "center" },
   lastCard: { flexDirection: "row", alignItems: "center", gap: 12 },
-  lastPhoto: { width: 60, height: 60, borderRadius: radius.sm },
+  modeTitle: { fontSize: 14, fontWeight: "800", color: colors.sub },
+  divider: { height: 1, backgroundColor: colors.line, marginVertical: 4 },
 });
