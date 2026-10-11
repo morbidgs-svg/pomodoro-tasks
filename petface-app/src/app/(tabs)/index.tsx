@@ -10,6 +10,7 @@ import { showRewardedAd } from "@/lib/ads";
 import { api } from "@/lib/api";
 import { pickPhoto, type PhotoSource } from "@/lib/image";
 import { MOOD_EMOJI } from "@/lib/mood";
+import { resolvePhoto } from "@/lib/photos";
 import { useApp } from "@/lib/store";
 import { colors, font, radius, space } from "@/lib/theme";
 
@@ -96,7 +97,7 @@ export default function Home() {
         {last && (
           <Pressable onPress={() => router.push(`/result/${last.id}`)}>
             <Card style={styles.lastCard}>
-              <Image source={{ uri: last.photoUri }} style={styles.lastPhoto} contentFit="cover" />
+              <Image source={{ uri: resolvePhoto(last.photoUri) }} style={styles.lastPhoto} contentFit="cover" />
               <View style={{ flex: 1, gap: 2 }}>
                 <Text style={font.small}>{new Date(last.createdAt).toLocaleDateString()}</Text>
                 <Text style={[font.body, { fontWeight: "700" }]} numberOfLines={1}>

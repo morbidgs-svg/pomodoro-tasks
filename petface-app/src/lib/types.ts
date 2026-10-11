@@ -1,5 +1,7 @@
 // The server's schema module is the single source of truth for the analysis
 // shape; it has no dependencies, so the app can import it directly.
+import type { AnalysisResponse } from "../../server/src/schema";
+
 export type {
   AnalysisResponse,
   Mood,
@@ -10,8 +12,6 @@ export type {
   CatPainUnit,
 } from "../../server/src/schema";
 export { CAT_PAIN_UNITS, PRODUCT_CATEGORIES } from "../../server/src/schema";
-
-import type { AnalysisResponse } from "../../server/src/schema";
 
 export type PetSpecies = "cat" | "dog";
 

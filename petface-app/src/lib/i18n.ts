@@ -18,6 +18,8 @@ export function deviceLanguage(): AppLanguage {
   return (LANGUAGES as string[]).includes(code) ? (code as AppLanguage) : "en";
 }
 
+// Configures i18next's shared default instance, which react-i18next reads.
+// eslint-disable-next-line import/no-named-as-default-member
 i18n.use(initReactI18next).init({
   resources: { ko: { translation: ko }, en: { translation: en }, ja: { translation: ja } },
   lng: deviceLanguage(),

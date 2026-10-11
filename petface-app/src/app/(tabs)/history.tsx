@@ -9,6 +9,7 @@ import { TrendChart } from "@/components/TrendChart";
 import { Button, Card, Chip } from "@/components/ui";
 import { FREE_LIMITS } from "@/lib/config";
 import { LEVEL_COLORS, MOOD_EMOJI, VET_LEVEL } from "@/lib/mood";
+import { resolvePhoto } from "@/lib/photos";
 import { useApp } from "@/lib/store";
 import { colors, font, radius, space } from "@/lib/theme";
 
@@ -77,7 +78,7 @@ export default function History() {
               }
               style={styles.row}
             >
-              <Image source={{ uri: item.photoUri }} style={styles.thumb} contentFit="cover" />
+              <Image source={{ uri: resolvePhoto(item.photoUri) }} style={styles.thumb} contentFit="cover" />
               <View style={{ flex: 1, gap: 3 }}>
                 <Text style={font.small}>{new Date(item.createdAt).toLocaleString()}</Text>
                 <Text style={[font.body, { fontWeight: "700" }]} numberOfLines={1}>

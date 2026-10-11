@@ -3,6 +3,7 @@ import { forwardRef } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { MOOD_EMOJI } from "@/lib/mood";
+import { resolvePhoto } from "@/lib/photos";
 import { colors } from "@/lib/theme";
 import type { HistoryItem } from "@/lib/types";
 
@@ -13,7 +14,7 @@ export const ShareCard = forwardRef<View, { item: HistoryItem; petName?: string;
     const { mood } = item.result;
     return (
       <View ref={ref} collapsable={false} style={[styles.card, { width: size, height: size }]}>
-        <Image source={{ uri: item.photoUri }} style={{ width: size, height: size, position: "absolute" }} contentFit="cover" />
+        <Image source={{ uri: resolvePhoto(item.photoUri) }} style={{ width: size, height: size, position: "absolute" }} contentFit="cover" />
         <View style={styles.overlay}>
           <Text style={styles.mood}>
             {MOOD_EMOJI[mood.primary]} {petName ? `${petName} · ` : ""}

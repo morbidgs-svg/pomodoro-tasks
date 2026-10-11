@@ -5,3 +5,7 @@ export async function persistPhoto(tempUri: string, _id: string): Promise<string
 }
 
 export function deletePhoto(_uri: string): void {}
+
+export function resolvePhoto(stored: string): string {
+  return stored;
+}

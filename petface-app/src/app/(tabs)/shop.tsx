@@ -15,7 +15,10 @@ export default function Shop() {
 
   // Put categories from the latest result for this pet first.
   const latest = history.find((h) => h.petId === selectedPet?.id && h.result.usable);
-  const suggested = species === selectedPet?.species ? latest?.result.recommended_categories ?? [] : [];
+  const suggested = useMemo(
+    () => (species === selectedPet?.species ? latest?.result.recommended_categories ?? [] : []),
+    [species, selectedPet?.species, latest],
+  );
 
   const products = useMemo(() => {
     const list = visibleProducts().filter(
