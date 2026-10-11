@@ -17,6 +17,9 @@ interface DeviceDay {
 }
 
 const DAY_TTL_SECONDS = 60 * 60 * 48;
+// KV allows about one write per second to the same key, so the service-wide
+// daily counter is split across shards that are summed on read.
+const GLOBAL_SHARDS = 8;
 
 function num(value: string | undefined, fallback: number): number {
   const n = Number(value);
@@ -35,6 +38,13 @@ async function readDevice(env: QuotaEnv, deviceId: string, day: string): Promise
 
 async function readCounter(env: QuotaEnv, key: string): Promise<number> {
   return Number((await env.QUOTA.get(key)) ?? 0);
+}
+
+async function readGlobal(env: QuotaEnv, day: string): Promise<number> {
+  const shards = await Promise.all(
+    Array.from({ length: GLOBAL_SHARDS }, (_, i) => readCounter(env, `global:${day}:${i}`)),
+  );
+  return shards.reduce((a, b) => a + b, 0);
 }
 
 export interface QuotaStatus {
@@ -84,7 +94,7 @@ export async function checkQuota(
   if (!premium && ipCount >= num(env.IP_DAILY_LIMIT, 20)) {
     return { ok: false, reason: "ip_limit", status };
   }
-  const global = await readCounter(env, `global:${day}`);
+  const global = await readGlobal(env, day);
   if (global >= num(env.GLOBAL_DAILY_LIMIT, 5000)) {
     return { ok: false, reason: "service_busy", status };
   }
@@ -103,18 +113,27 @@ export async function recordUse(
   countDevice: boolean,
 ): Promise<void> {
   const day = today();
-  const d = await readDevice(env, deviceId, day);
-  const ipCount = await readCounter(env, `ip:${ip}:${day}`);
-  const global = await readCounter(env, `global:${day}`);
-  await Promise.all([
+  const shard = Math.floor(Math.random() * GLOBAL_SHARDS);
+  const globalKey = `global:${day}:${shard}`;
+  const [d, ipCount, global] = await Promise.all([
+    readDevice(env, deviceId, day),
+    readCounter(env, `ip:${ip}:${day}`),
+    readCounter(env, globalKey),
+  ]);
+  // allSettled: a rejected counter write (e.g. KV's per-key rate limit) must
+  // not turn an analysis the user already received into an error.
+  const results = await Promise.allSettled([
     countDevice
       ? env.QUOTA.put(`dev:${deviceId}:${day}`, JSON.stringify({ ...d, used: d.used + 1 }), {
           expirationTtl: DAY_TTL_SECONDS,
         })
       : Promise.resolve(),
     env.QUOTA.put(`ip:${ip}:${day}`, String(ipCount + 1), { expirationTtl: DAY_TTL_SECONDS }),
-    env.QUOTA.put(`global:${day}`, String(global + 1), { expirationTtl: DAY_TTL_SECONDS }),
+    env.QUOTA.put(globalKey, String(global + 1), { expirationTtl: DAY_TTL_SECONDS }),
   ]);
+  for (const r of results) {
+    if (r.status === "rejected") console.error("quota write failed", r.reason);
+  }
 }
 
 /**

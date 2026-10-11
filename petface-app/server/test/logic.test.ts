@@ -38,7 +38,7 @@ test("cat pain: hidden units are excluded, under 3 visible is insufficient", () 
   assert.equal(summarizeCatPain(painCheck([2, null, null, null, 2])).level, "insufficient");
 });
 
-function fakeKV(): KVNamespace {
+function fakeKV(failKeys: string[] = []): KVNamespace {
   const m = new Map<string, string>();
   return {
     async get(key: string, type?: string) {
@@ -46,7 +46,10 @@ function fakeKV(): KVNamespace {
       if (v === undefined) return null;
       return type === "json" ? JSON.parse(v) : v;
     },
-    async put(key: string, value: string) { m.set(key, value); },
+    async put(key: string, value: string) {
+      if (failKeys.some((k) => key.startsWith(k))) throw new Error("429 too many writes");
+      m.set(key, value);
+    },
     async delete(key: string) { m.delete(key); },
   } as unknown as KVNamespace;
 }
@@ -101,4 +104,19 @@ test("model per plan: tier override, then shared, then default", () => {
   const tiered = { ...base, CLAUDE_MODEL: "m", CLAUDE_MODEL_FREE: "f", CLAUDE_MODEL_PREMIUM: "p" };
   assert.equal(modelFor(tiered, false), "f");
   assert.equal(modelFor(tiered, true), "p");
+});
+
+test("quota: global cap counts across shards", async () => {
+  const env: QuotaEnv = { QUOTA: fakeKV(), GLOBAL_DAILY_LIMIT: "5" };
+  for (let i = 0; i < 5; i++) {
+    await recordUse(env, `${i}1111111-2222-3333-4444-555555555555`, `10.0.0.${i}`, true);
+  }
+  const r = await checkQuota(env, DEV, "9.9.9.9", true);
+  assert.equal(!r.ok && r.reason, "service_busy");
+});
+
+test("quota: a failing counter write doesn't throw", async () => {
+  const env: QuotaEnv = { QUOTA: fakeKV(["global:"]) };
+  await recordUse(env, DEV, "1.1.1.1", true);
+  assert.equal((await getStatus(env, DEV, false)).used, 1);
 });

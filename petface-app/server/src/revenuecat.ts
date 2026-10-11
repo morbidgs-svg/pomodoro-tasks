@@ -37,7 +37,11 @@ export async function isPremium(env: RevenueCatEnv, appUserId: string): Promise<
   const ent = body.subscriber?.entitlements?.[entitlementId];
   const active = !!ent && (ent.expires_date === null || Date.parse(ent.expires_date) > Date.now());
 
-  await env.QUOTA.put(cacheKey, active ? "1" : "0", { expirationTtl: CACHE_TTL_SECONDS });
+  try {
+    await env.QUOTA.put(cacheKey, active ? "1" : "0", { expirationTtl: CACHE_TTL_SECONDS });
+  } catch (e) {
+    console.error("premium cache write failed", e);
+  }
   return active;
 }
 
